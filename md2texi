@@ -26,6 +26,10 @@ function unescape(html) {
     });
 }
 
+let infofile = function(file) {
+    return path.basename(file, '.markdown')
+}
+
 let template = function(type) {
     return fs.readFileSync(path.join(__dirname, 'templates', `${type}.txt`)).toString()
 }
@@ -193,7 +197,8 @@ let menuitem2texi = function(root, node_id) {
 }
 
 
-let texinfo = function(input, opt) {
+// `file` is only used for error reporting
+let texinfo = function(input, file, opt) {
     input = texi_escape(input)
     let renderer = new marked.Renderer()
 
@@ -266,7 +271,7 @@ let texinfo = function(input, opt) {
 	// strip comments
 	if (html.trim().match(/^<!--.*?-->$/)) return ''
 
-	console.error('raw html:\n\n%s', html)
+	warnx(`${file}: raw html:\n${html}`)
 	return html
     }
 
@@ -295,31 +300,40 @@ let conf = {
     tocFull: false,
     tocShort: false,
     title: null,
-    partial: false
+    partial: false,
+    verbose: 0
 }
 
 let errx = function(msg) {
-    console.error("error: %s", msg)
+    console.error("%s error: %s", path.basename(process.argv[1]), msg)
     process.exit(1)
 }
 
-let input_src = function() {
-    return program.args[0] ? program.args[0] : '/dev/stdin'
+let vputs = function(level, msg) {
+    if (level <= conf.verbose) console.error(msg)
 }
 
-let input_read = function() {
+let warnx = function(msg) {
+    vputs(0, `${path.basename(process.argv[1])} warning: ${msg}`)
+}
+
+let input_src = function() {
+    return program.args.length === 0 ? ['/dev/stdin'] : program.args
+}
+
+let input_read = function(source) {
     try {
-	return fs.readFileSync(input_src()).toString()
+	return fs.readFileSync(source).toString()
     } catch (err) {
 	errx(err.message)
     }
 }
 
-let texi = function(input, infofile, opt) {
-    let r = texinfo(input, opt)
+let texi = function(input, file, opt) {
+    let r = texinfo(input, file, opt)
     let o = {
 	opt: opt,
-	infofile: infofile,
+	infofile: infofile(file),
 	texi: r
     }
 
@@ -335,6 +349,7 @@ if (__filename === process.argv[1]) {
 
     program
 	.version(meta.version)
+	.option('-v, --verbose', 'Be verbose', function() { conf.verbose++ })
 	.option('-p, --partial', 'Generate a partial document')
 	.option('-t, --title <string>', 'Document title')
 	.option('--toc-full', 'Include full TOC')
@@ -346,10 +361,14 @@ if (__filename === process.argv[1]) {
     conf.tocFull = program.tocFull
     conf.tocShort = program.tocShort
 
-    let input = input_read()
-    let infofile = path.basename(input_src(), '.markdown')
-    let output = texi(input, infofile, conf)
-    process.stdout.write(output)
+    if (input_src().length > 1) conf.partial = true
+
+    for (let src of input_src()) {
+	vputs(1, src)
+	let input = input_read(src)
+	let output = texi(input, src, conf)
+	process.stdout.write(output)
+    }
 
 } else {
     // for tests
