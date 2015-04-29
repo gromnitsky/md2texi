@@ -29,7 +29,7 @@ converter. It was written to support iojs doc files only.
 
 1. Clone iojs repo.
 
-2. Clone md2texi repo.
+2. Clone md2texi repo, cd to its dir & type `npm install`.
 
 3. Create a tmp dir somewhere & cd to it.
 
