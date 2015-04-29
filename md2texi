@@ -291,7 +291,8 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 
 	    href = menu.filter(function(val) {
 		return val.find_by_id_prefix(prefix)
-	    })[0].kids[0].id
+	    })
+	    href = href.length === 0 ? prefix : href[0].kids[0].id
 	} else {
 	    // convert to node id
 	    href = href.replace(/^(.+)?#/, '')
