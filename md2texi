@@ -69,6 +69,7 @@ let index = function(text, level, prefix) {
 
 let node_id = function(text, level, prefix) {
     let id = text.toLowerCase()
+	.replace(/<.+?>/g, '')  // strip html
 	.replace(/[^\w]+/g, '_')
 	.replace(/_+/g, '_')
 	.replace(/_$/, '')
@@ -179,7 +180,9 @@ let texinfo = function(input, opt) {
 //    console.error(util.inspect(root, {depth: null}))
 
     renderer.heading = function (text, level) {
-	text = unescape(text)
+//	console.error(text)
+	text = unescape(text).replace(/@\w+?{(.+?)}/g, '$1') // strip texinfo
+//	console.error(text)
 	let id = node_id(text, level, node_id_prefix)
 	if (level === 1) node_id_prefix = id
 
@@ -232,7 +235,7 @@ let texinfo = function(input, opt) {
 	if (href.match(/^https?:\/\//)) {
 	    return `@uref{${href},${text}}`
 	}
-	href = href.replace(/^(.+)?#/, '')
+	href = href.replace(/^(.+)?#/, '').replace(/\.html$/, '')
 	return `@ref{${href},${text}}`
     }
 
