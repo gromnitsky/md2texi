@@ -1,6 +1,11 @@
 \input texinfo   @c -*-texinfo-*-
 @setfilename {{ infofile }}.info
 
+@dircategory Software development
+@direntry
+* iojs: (iojs).                 The io.js API.
+@end direntry
+
 @c a title page for TeX
 @titlepage
 @title {{#opt.title}}{{{opt.title}}}{{/opt.title}}{{^opt.title}}No Title{{/opt.title}}

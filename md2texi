@@ -392,6 +392,7 @@ let conf = {
     tocShort: false,
     title: null,
     author: null,
+    info: null,
     partial: false,
     verbose: 0
 }
@@ -440,10 +441,12 @@ if (__filename === process.argv[1]) {
 
     program
 	.version(meta.version)
+	.usage('[options] [file.markdown, ...]')
 	.option('-v, --verbose', 'Be verbose', function() { conf.verbose++ })
 	.option('-p, --partial', 'Generate a partial document')
 	.option('-t, --title <string>', 'Document title')
 	.option('-a, --author <string>', 'Document author')
+	.option('--info <string>', 'Info filename output (for multiple src only)')
 	.option('--toc-full', 'Include full TOC')
 	.option('--toc-short', 'Include short TOC')
 	.parse(process.argv)
@@ -451,6 +454,7 @@ if (__filename === process.argv[1]) {
     conf.partial = program.partial
     conf.title = program.title
     conf.author = program.author
+    conf.info = program.info
     conf.tocFull = program.tocFull
     conf.tocShort = program.tocShort
 
@@ -494,7 +498,7 @@ if (__filename === process.argv[1]) {
 
 	// wrap the result
 	conf.partial = false
-	let output = texi(ti.join(""), conf.title || 'no-title', conf)
+	let output = texi(ti.join(""), conf.info || 'multi', conf)
 	process.stdout.write(output)
     }
 
