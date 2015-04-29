@@ -18,6 +18,10 @@ String.prototype.html_strip = function() {
     return this.replace(/<.+?>/g, '')
 }
 
+String.prototype.texi_escape = function() {
+    return this.replace(/[@{}]/g, '@$&')
+}
+
 // copied from marked package
 function unescape(html) {
     return html.replace(/&([#\w]+);/g, function(_, n) {
@@ -112,9 +116,7 @@ let section = function(level) {
 }
 
 let humanName = function(text) {
-    return text.replace(/[:,\\]/g, ' ')
-	.replace(/<.+?>/g, '')  // strip html
-	.replace(/\s+/, ' ').trim()
+    return text.replace(/[:,\\]/g, ' ').html_strip().replace(/\s+/, ' ').trim()
 }
 
 class TexiNodeIdGenerator {
@@ -129,8 +131,7 @@ class TexiNodeIdGenerator {
     }
 
     _id(text) {
-	let id = text.toLowerCase()
-	    .replace(/<.+?>/g, '')  // strip html
+	let id = text.toLowerCase().html_strip()
 	    .replace(/[^\w]+/g, '_')
 	    .replace(/_+/g, '_')
 	    .replace(/_$/, '')
@@ -165,10 +166,6 @@ class TexiNodeIdGenerator {
 	}
     }
 
-}
-
-let texi_escape = function(str) {
-    return str.replace(/[@{}]/g, '@$&')
 }
 
 class MenuItem {
@@ -243,7 +240,7 @@ class MenuItem {
 }
 
 let make_menu = function(input, file) {
-    input = texi_escape(input)
+    input = input.texi_escape()
     let renderer = new marked.Renderer()
     let root = new MenuItem(null, null, 0)
     let prev = root
@@ -280,7 +277,7 @@ let menuitem2texi = function(root, node_id) {
 
 
 let texinfo = function(menu, menu_idx, input, file, opt) {
-    input = texi_escape(input)
+    input = input.texi_escape()
     let renderer = new marked.Renderer()
 
     let root = menu[menu_idx]
@@ -288,9 +285,7 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     let tnidg = new TexiNodeIdGenerator(file)
 
     renderer.heading = function (text, level) {
-//	console.error(text)
 	text = unescape(text).replace(/@\w+?{(.+?)}/g, '$1') // strip texinfo
-//	console.error(text)
 	let id = tnidg.get(text)
 
 	return [`\n@c ${new Array(78).join('-')}`,
