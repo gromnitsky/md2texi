@@ -92,8 +92,8 @@ class TexiNodeIdGenerator {
 	let id = TexiNodeIdGenerator.Id(text, level, prefix)
 	let prev = this.db[id]
 	if (util.isNumber(prev)) {
-	    id = `${id}_${prev + 1}`
 	    this.db[id] += 1
+	    id = `${id}_${prev + 1}`
 	} else {
 	    this.db[id] = 0
 	}
