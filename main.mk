@@ -2,12 +2,16 @@
 # make -f ../md2texi/main.mk DATA=~/tmp/io.js/doc/api info
 
 DATA :=
+DESTDIR := ~
+prefix :=
 
 .DELETE_ON_ERROR:
 
 .PHONY: compile
 compile:
 
+infodir := share/info
+info.toplevel := $(DESTDIR)$(prefix)/$(infodir)/dir
 mkdir := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 out := .
 
@@ -35,6 +39,22 @@ info: $(out)/iojs.info
 
 .PHONY: html
 html: $(out)/iojs.html
+
+.PHONY: install
+install: iojs.info
+	mkdir -p $(dir $(info.toplevel))
+	cp $<* $(dir $(info.toplevel))
+	install-info $< $(info.toplevel)
+	@echo
+	@echo '****************************************************************'
+	@echo 'You should probably add $(dir $(info.toplevel)) directory to'
+	@echo 'the INFOPATH env var for info(1) or to the Info-directory-list'
+	@echo 'var for Emacs, otherwise viewers may not be able to find the'
+	@echo 'newly installed doc.'
+	@echo
+	@echo 'To check the installation, open info(1), press 'm','
+	@echo "type 'iojs' & press Return."
+	@echo '****************************************************************'
 
 
 %.texi: %.markdown
