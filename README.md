@@ -35,7 +35,7 @@ converter. It was written to support iojs doc files only.
 
 4. Type
 
-		$ make -f $/tmp/md2texi/main.mk DATA=~/tmp/io.js/doc/api info
+		$ make -f ~/tmp/md2texi/main.mk DATA=~/tmp/io.js/doc/api info
 
 	`iojs.info` file must appear.
 
@@ -43,20 +43,20 @@ converter. It was written to support iojs doc files only.
 
 6. Type
 
-		$ make -f $/tmp/md2texi/main.mk DATA=~/tmp/io.js/doc/api install
+		$ make -f ~/tmp/md2texi/main.mk DATA=~/tmp/io.js/doc/api install
 
 	to install `iojs.info` (it defaults to `~/share/info/`) &
 	auto-create a special `dir` file.
 
 You may get warnings like `@ref reference to nonexistent node
-`event_listening_'` during compilation. This is not (hehe) a bug in
+'event_listening_'` during compilation. This is not (hehe) a bug in
 md2texi, but typos in iojs docs.
 
 ## PDF
 
 If you have texlive & texinfo-tex installed, try to run:
 
-	$ make -f $/tmp/md2texi/main.mk DATA=~/tmp/io.js/doc/api pdf
+	$ make -f ~/tmp/md2texi/main.mk DATA=~/tmp/io.js/doc/api pdf
 
 to generate `iojs.pdf` file.
 
