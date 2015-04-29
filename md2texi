@@ -26,10 +26,6 @@ function unescape(html) {
     });
 }
 
-let html_strip_comments = function(html) {
-    return html.replace(/<!--.*?-->/g, '')
-}
-
 let template = function(type) {
     return fs.readFileSync(path.join(__dirname, 'templates', `${type}.txt`)).toString()
 }
@@ -214,9 +210,9 @@ let texinfo = function(input, opt) {
     renderer.list = function(body, ordered) {
 	let type = ordered ? 'enumerate' : 'itemize'
 	let r = []
-	r.push(`@${type}`)
+	r.push(`\n@${type}`)
 	r.push(body)
-	r.push(`@end ${type}\n`)
+	r.push(`\n@end ${type}\n`)
 	return r.join('\n')
     }
 
@@ -228,12 +224,28 @@ let texinfo = function(input, opt) {
 	return '@emph{' + texi_escape(text) + '}'
     }
 
+    renderer.strong = function(text) {
+	return '@strong{' + texi_escape(text) + '}'
+    }
+
     renderer.link = function(href, title, text) {
 	if (href.match(/^https?:\/\//)) {
 	    return `@uref{${href},${text}}`
 	}
 	href = href.replace(/^(.+)?#/, '')
 	return `@ref{${href},${text}}`
+    }
+
+    renderer.html = function(html) {
+	// strip comments
+	if (html.trim().match(/^<!--.*?-->$/)) return ''
+
+	console.error('raw html:\n\n%s', html)
+	return html
+    }
+
+    renderer.blockquote = function(quote) {
+	return '\n@indentedblock\n' + quote + '\n@end indentedblock\n'
     }
 
     let topmenu = ''
@@ -245,7 +257,7 @@ let texinfo = function(input, opt) {
 	topmenu = Mustache.render(template("texi.menu"), {menu: menu})
     }
     return [topmenu,
-	    html_strip_comments(marked(input, { renderer: renderer }))].join('')
+	    marked(input, { renderer: renderer })].join('')
 }
 
 
