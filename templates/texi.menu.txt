@@ -1,0 +1,5 @@
+@menu
+{{#menu}}
+* {{{humanName}}}: {{ id }}.
+{{/menu}}
+@end menu

@@ -1,0 +1,35 @@
+{
+    "private": true,
+
+    "name": "md2texi",
+    "version": "0.0.1",
+    "description": "Convert io.js documentation to Texinfo format",
+
+    "keywords": [
+	"texinfo",
+	"emacs",
+	"documentation"
+    ],
+    "author": "Alexander Gromnitsky <alexander.gromnitsky@gmail.com>",
+    "license": {
+	"type": "MIT",
+	"url": "http://www.opensource.org/licenses/mit-license.php"
+    },
+    "url": "https://github.com/gromnitsky/md2texi",
+    "repository": {
+	"type": "git",
+	"url": "git://github.com/gromnitsky/md2texi.git"
+    },
+
+    "preferGlobal": true,
+    "bin": "./md2texi",
+
+    "dependencies": {
+	"marked": "~0.3.3",
+	"commander": "~2.8.1",
+	"mustache": "~2.0.0"
+    },
+    "devDependencies": {
+	"mocha": "~2.2.4"
+    }
+}

@@ -1,0 +1,25 @@
+\input texinfo   @c -*-texinfo-*-
+@setfilename {{ infofile }}.info
+
+@c a title page for TeX
+@titlepage
+@title {{#opt.title}}{{{opt.title}}}{{/opt.title}}{{^opt.title}}No Title{{/opt.title}}
+@end titlepage
+
+{{#opt.tocShort}}@shortcontents{{/opt.tocShort}}
+{{#opt.tocFull}}@contents{{/opt.tocFull}}
+
+@c info/html
+@ifnottex
+@node Top
+@top {{#opt.title}}{{{opt.title}}}{{/opt.title}}{{^opt.title}}No Title{{/opt.title}}
+@end ifnottex
+
+{{! here will be menu for Top too }}
+{{{ texi }}}
+
+@node Index
+@unnumbered Index
+@printindex fn
+
+@bye

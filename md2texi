@@ -1,0 +1,289 @@
+#!/usr/bin/env node
+
+'use strict';
+
+let fs = require('fs')
+let path = require('path')
+let util = require('util')
+
+let marked = require('marked')
+let program = require('commander')
+let Mustache = require('mustache')
+
+let meta = require('./package.json')
+
+// copied from marked package
+function unescape(html) {
+    return html.replace(/&([#\w]+);/g, function(_, n) {
+	n = n.toLowerCase();
+	if (n === 'colon') return ':';
+	if (n.charAt(0) === '#') {
+	    return n.charAt(1) === 'x'
+		? String.fromCharCode(parseInt(n.substring(2), 16))
+		: String.fromCharCode(+n.substring(1));
+	}
+	return '';
+    });
+}
+
+let template = function(type) {
+    return fs.readFileSync(path.join(__dirname, 'templates', `${type}.txt`)).toString()
+}
+
+let section = function(level) {
+    switch (level) {
+    case 1:
+	return '@chapter'
+	break
+    case 2:
+	return '@section'
+	break
+    case 3:
+	return '@subsection'
+	break
+    case 4:
+	return '@subsubsection'
+	break
+    default:
+	throw new Error(`level ${level} is not supported`)
+    }
+}
+
+let humanName = function(text) {
+    return text.replace(/[:,\\]/g, ' ').replace(/\s+/, ' ').trim()
+}
+
+let index = function(text, level, prefix) {
+    prefix += ' '
+    if (level < 2) prefix = ''
+
+    if (text.match(/event:/i)) {
+	text = text.replace(/Event:\s+([^(]+).*/, '$1').replace(/['"]/g, '')
+	return [`@findex ${prefix}event ${text}`,
+		`@findex event ${prefix}${text}`].join("\n")
+    } else {
+	text = text.replace(/([^(]+).*/, '$1').replace(/['"]/g, '')
+	return `@findex ${prefix}${humanName(text)}`
+    }
+}
+
+let node_id = function(text, level, prefix) {
+    let id = text.toLowerCase()
+	.replace(/[^\w]+/g, '_')
+	.replace(/_+/g, '_')
+	.replace(/_$/, '')
+
+    return level > 1 ? `${prefix}_${id}` : id
+}
+
+let texi_escape = function(text) {
+    return unescape(text).replace(/[@{}]/g, '@$&')
+}
+
+class MenuItem {
+    constructor(id, humanName, level, parent) {
+	this.id = id
+	this.humanName = humanName
+	this.level = level
+	this.parent = null
+
+	this.kids = []
+    }
+
+    kid_add(menuitem) {
+	if (this.level === menuitem.level - 1) {
+	    this.kids.push(menuitem)
+	    menuitem.parent = this
+	} else {
+	    let parent = this.find(menuitem.level - 1)
+//	    console.error('%s < %s', menuitem.id, parent.id)
+	    parent.kids.push(menuitem)
+	    menuitem.parent = parent
+	}
+    }
+
+    // return a MenuItem object
+    find(level) {
+	let node = this
+	while (true) {
+	    if (node.level === level) return node
+	    node = node.parent
+	    if (!node) throw new Error(`${level} not found, root node reached`)
+	}
+
+	// not reached
+    }
+
+    find_by_id(id) {
+//	console.error(this.id, id)
+	if (this.id === id) return this
+
+	let r = null
+//	console.error(this.kids.map(function(v) { return v.id }))
+	for (let node of this.kids) {
+//	    console.error('*', node.id)
+	    if (node.id === id) {
+//		console.error('  FOUND')
+		return node
+	    }
+	    r = node.find_by_id(id)
+	    if (r) break
+	}
+
+	return r
+    }
+}
+
+let make_menu = function(input) {
+    let renderer = new marked.Renderer()
+    let node_id_prefix = ''
+    let root = new MenuItem(null, null, 0)
+    let prev = root
+
+    renderer.heading = function (text, level) {
+	text = unescape(text)
+	let id = node_id(text, level, node_id_prefix)
+	if (level === 1) node_id_prefix = id
+
+	let mi = new MenuItem(id, humanName(text), level)
+	prev.kid_add(mi)
+	prev = mi
+    }
+    marked(input, { renderer: renderer })
+    return root
+}
+
+let menuitem2texi = function(root, node_id) {
+//    console.error('\n->', node_id)
+    let node = root.find_by_id(node_id)
+    if (node.kids.length === 0) return ""
+
+//    console.error(node)
+    let menu = node.kids.map(function(node) {
+	return {
+	    id: node.id,
+	    humanName: node.humanName
+	}
+    })
+    let r = Mustache.render(template("texi.menu"), {menu: menu})
+//    console.error(r)
+    return r
+}
+
+
+let texinfo = function(input, opt) {
+    let renderer = new marked.Renderer()
+
+    let node_id_prefix = ''
+    let root = make_menu(input)
+//    console.error(util.inspect(root, {depth: null}))
+
+    renderer.heading = function (text, level) {
+	text = unescape(text)
+	let id = node_id(text, level, node_id_prefix)
+	if (level === 1) node_id_prefix = id
+
+	return [`\n@c ${new Array(78).join('-')}`,
+		`@node ${id}`,
+		`${section(level)} ${humanName(text)}`,
+		index(text, level, node_id_prefix),
+		'\n',
+		menuitem2texi(root, id)].join('\n')
+    }
+
+    renderer.code = function(code, lang, escaped) {
+	return ['\n',
+		'@example',
+		texi_escape(code),
+		'@end example',
+		'\n'].join("\n")
+    }
+
+    renderer.codespan = function(text) {
+	return '@code{' + texi_escape(text) + '}'
+    }
+
+    renderer.paragraph = function(text) {
+	return '\n' + unescape(text) + '\n'
+    }
+
+    let topmenu = ''
+    if (!opt.partial) {
+	let menu = [
+	    { id: root.kids[0].id, humanName: root.kids[0].humanName },
+	    { id: 'Index', humanName: 'Index' }
+	]
+	topmenu = Mustache.render(template("texi.menu"), {menu: menu})
+    }
+    return [topmenu,
+	    marked(input, { renderer: renderer })].join('')
+}
+
+
+/*
+  CLI
+*/
+
+let conf = {
+    tocFull: false,
+    tocShort: false,
+    title: null,
+    partial: false
+}
+
+let errx = function(msg) {
+    console.error("error: %s", msg)
+    process.exit(1)
+}
+
+let input_src = function() {
+    return program.args[0] ? program.args[0] : '/dev/stdin'
+}
+
+let input_read = function() {
+    try {
+	return fs.readFileSync(input_src()).toString()
+    } catch (err) {
+	errx(err.message)
+    }
+}
+
+let texi = function(input, infofile, opt) {
+    let r = texinfo(input, opt)
+    let o = {
+	opt: opt,
+	infofile: infofile,
+	texi: r
+    }
+
+    if (opt.partial) return r
+    return Mustache.render(template('texi.doc'), o)
+}
+
+
+/*
+  Main
+*/
+if (__filename === process.argv[1]) {
+
+    program
+	.version(meta.version)
+	.option('-p, --partial', 'Generate a partial document')
+	.option('-t, --title <string>', 'Document title')
+	.option('--toc-full', 'Include full TOC')
+	.option('--toc-short', 'Include short TOC')
+	.parse(process.argv)
+
+    conf.partial = program.partial
+    conf.title = program.title
+    conf.tocFull = program.tocFull
+    conf.tocShort = program.tocShort
+
+    let input = input_read()
+    let infofile = path.basename(input_src(), '.markdown')
+    let output = texi(input, infofile, conf)
+    process.stdout.write(output)
+
+} else {
+    // for tests
+}
