@@ -1,5 +1,5 @@
 # cd some-dir
-# make -f ../md2texi/main.mk DATA=~/tmp/io.js/doc/api
+# make -f ../md2texi/main.mk DATA=~/tmp/io.js/doc/api info
 
 DATA :=
 
@@ -18,17 +18,42 @@ endif
 $(if $(DATA),,$(error DATA must point to iojs docs dir))
 
 vpath %.markdown $(DATA)
-md.src := $(filter-out %_toc.markdown, $(wildcard $(DATA)/*.markdown))
+md.src.list := $(shell cat $(mkdir)/list.txt)
+md.src := $(addprefix $(DATA)/, $(md.src.list))
 
 texi.api := $(patsubst $(DATA)/%.markdown, $(out)/%.texi, $(md.src))
 
-all := $(texi.api)
+all := $(texi.api) $(out)/iojs.texi $(out)/iojs.info
 
 compile: $(all)
+
+.PHONY: pdf
+pdf: $(out)/iojs.pdf
+
+.PHONY: info
+info: $(out)/iojs.info
+
+.PHONY: html
+html: $(out)/iojs.html
+
 
 %.texi: %.markdown
 	node --harmony_classes $(mkdir)/md2texi $< > $@
 
+iojs.texi: $(mkdir)/list.txt $(md.src)
+	node --harmony_classes $(mkdir)/md2texi \
+		-t 'The io.is API' -a '@copyright{} io.js Contributors' \
+		--info iojs --toc-short --toc-full \
+		$(md.src) > $@
+
+$(out)/iojs.info: $(out)/iojs.texi
+	 makeinfo --force $<
+
+$(out)/iojs.html: $(out)/iojs.texi
+	 makeinfo --force --html --no-split --no-headers $<
+
+$(out)/iojs.pdf: $(out)/iojs.texi
+	texi2pdf -q -t '@afourpaper' $<
 
 pp-%:
 	@echo "$(strip $($*))" | tr ' ' \\n
