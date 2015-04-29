@@ -26,6 +26,10 @@ function unescape(html) {
     });
 }
 
+let html_strip_comments = function(html) {
+    return html.replace(/<!--.*?-->/g, '')
+}
+
 let template = function(type) {
     return fs.readFileSync(path.join(__dirname, 'templates', `${type}.txt`)).toString()
 }
@@ -58,11 +62,11 @@ let index = function(text, level, prefix) {
     if (level < 2) prefix = ''
 
     if (text.match(/event:/i)) {
-	text = text.replace(/Event:\s+([^(]+).*/, '$1').replace(/['"]/g, '')
+	text = text.replace(/Event:\s+([^(\[]+).*/, '$1').replace(/['"]/g, '')
 	return [`@findex ${prefix}event ${text}`,
 		`@findex event ${prefix}${text}`].join("\n")
     } else {
-	text = text.replace(/([^(]+).*/, '$1').replace(/['"]/g, '')
+	text = text.replace(/([^(\[]+).*/, '$1').replace(/['"]/g, '')
 	return `@findex ${prefix}${humanName(text)}`
     }
 }
@@ -207,6 +211,31 @@ let texinfo = function(input, opt) {
 	return '\n' + unescape(text) + '\n'
     }
 
+    renderer.list = function(body, ordered) {
+	let type = ordered ? 'enumerate' : 'itemize'
+	let r = []
+	r.push(`@${type}`)
+	r.push(body)
+	r.push(`@end ${type}\n`)
+	return r.join('\n')
+    }
+
+    renderer.listitem = function(text) {
+	return '\n@item ' + unescape(text)
+    }
+
+    renderer.em = function(text) {
+	return '@emph{' + texi_escape(text) + '}'
+    }
+
+    renderer.link = function(href, title, text) {
+	if (href.match(/^https?:\/\//)) {
+	    return `@uref{${href},${text}}`
+	}
+	href = href.replace(/^(.+)?#/, '')
+	return `@ref{${href},${text}}`
+    }
+
     let topmenu = ''
     if (!opt.partial) {
 	let menu = [
@@ -216,7 +245,7 @@ let texinfo = function(input, opt) {
 	topmenu = Mustache.render(template("texi.menu"), {menu: menu})
     }
     return [topmenu,
-	    marked(input, { renderer: renderer })].join('')
+	    html_strip_comments(marked(input, { renderer: renderer }))].join('')
 }
 
 
