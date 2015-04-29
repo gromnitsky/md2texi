@@ -9,8 +9,14 @@ let util = require('util')
 let marked = require('marked')
 let program = require('commander')
 let Mustache = require('mustache')
+let parse5 = require('parse5')
 
 let meta = require('./package.json')
+
+
+String.prototype.html_strip = function() {
+    return this.replace(/<.+?>/g, '')
+}
 
 // copied from marked package
 function unescape(html) {
@@ -24,6 +30,58 @@ function unescape(html) {
 	}
 	return '';
     });
+}
+
+// return all matching nodes from doc
+let p5selectAll = function(doc, tagName) {
+    let all = []
+    for (let node of doc.childNodes) {
+	if (node.tagName === tagName) all.push(node)
+	if (node.childNodes && node.childNodes.length > 0) {
+	    // recursion!
+	    let r = p5selectAll(node, tagName)
+	    all = all.concat(r)
+	}
+    }
+
+    return all
+}
+
+let htmltable2texi = function(html) {
+    let parser = new parse5.Parser()
+    let serializer1 = new parse5.Serializer()
+    let doc = parser.parseFragment(html)
+
+    // calculate the number or columns
+    let th = p5selectAll(doc, 'th')
+    let cols = th.length
+    if (cols === 0) throw new Error('no THs in table')
+    let col_frac = (100/cols/100).toFixed(2).slice(1)
+    let cols_spec = new Array(cols + 1).join(' ' + col_frac)
+
+    // texinfo table banner w/ column width spec
+    let r = []
+    r.push(`@multitable @columnfractions${cols_spec}\n`)
+
+    // texinfo table header
+    r.push('@headitem ')
+    r.push(th.map(function(node) {
+	return serializer1.serialize(node).html_strip().trim()
+    }).join(' @tab '))
+    r.push('\n')
+
+    // texinfo table body
+    let tr = p5selectAll(doc, 'tr').slice(1) // minus <thead>
+    for (let row of tr) {
+	let td = p5selectAll(row, 'td')
+	for (let idx in td) {
+	    r.push(parseInt(idx) === 0 ? '\n@item\n' : '@tab\n')
+	    r.push(serializer1.serialize(td[idx]).html_strip().trim() + '\n')
+	}
+    }
+
+    r.push(`\n@end multitable`)
+    return r.join("")
 }
 
 let infofile = function(file) {
@@ -301,8 +359,11 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     }
 
     renderer.html = function(html) {
+	html = html.trim()
 	// strip comments
-	if (html.trim().match(/^<!--.*?-->$/)) return ''
+	if (html.match(/^<!--.*?-->$/)) return ''
+	// try to convert a simple table
+	if (html.match(/^<table>/)) return htmltable2texi(html)
 
 	warnx(`${file}: raw html:\n${html}`)
 	return html
