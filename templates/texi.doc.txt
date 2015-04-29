@@ -4,6 +4,8 @@
 @c a title page for TeX
 @titlepage
 @title {{#opt.title}}{{{opt.title}}}{{/opt.title}}{{^opt.title}}No Title{{/opt.title}}
+@subtitle {{ opt.timestamp }}
+@author {{ opt.author }}
 @end titlepage
 
 {{#opt.tocShort}}@shortcontents{{/opt.tocShort}}

@@ -333,6 +333,7 @@ let conf = {
     tocFull: false,
     tocShort: false,
     title: null,
+    author: null,
     partial: false,
     verbose: 0
 }
@@ -364,6 +365,7 @@ let input_read = function(source) {
 
 let texi = function(ti, file, opt) {
     if (opt.partial) return ti
+    opt.timestamp = new Date()
     let o = {
 	opt: opt,
 	infofile: infofile(file),
@@ -383,12 +385,14 @@ if (__filename === process.argv[1]) {
 	.option('-v, --verbose', 'Be verbose', function() { conf.verbose++ })
 	.option('-p, --partial', 'Generate a partial document')
 	.option('-t, --title <string>', 'Document title')
+	.option('-a, --author <string>', 'Document author')
 	.option('--toc-full', 'Include full TOC')
 	.option('--toc-short', 'Include short TOC')
 	.parse(process.argv)
 
     conf.partial = program.partial
     conf.title = program.title
+    conf.author = program.author
     conf.tocFull = program.tocFull
     conf.tocShort = program.tocShort
 
