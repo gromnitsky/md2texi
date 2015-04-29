@@ -165,6 +165,23 @@ class MenuItem {
 
 	return r
     }
+
+    find_by_id_prefix(prefix) {
+	let re = new RegExp(`^${prefix}`)
+	if (this.id && this.id.match(re)) return this
+
+	let r = null
+	for (let node of this.kids) {
+	    if (node.id.match(re)) {
+		return node
+	    }
+	    r = node.find_by_id_prefix(prefix)
+	    if (r) break
+	}
+
+	return r
+    }
+
 }
 
 let make_menu = function(input, file) {
@@ -204,11 +221,11 @@ let menuitem2texi = function(root, node_id) {
 }
 
 
-let texinfo = function(input, file, opt) {
+let texinfo = function(menu, menu_idx, input, file, opt) {
     input = texi_escape(input)
     let renderer = new marked.Renderer()
 
-    let root = make_menu(input, file)
+    let root = menu[menu_idx]
 //    console.error(util.inspect(root, {depth: null}))
     let tnidg = new TexiNodeIdGenerator(file)
 
@@ -268,14 +285,15 @@ let texinfo = function(input, file, opt) {
 	    return `@uref{${href},${text}}`
 	}
 	if (href.match(/\.html$/)) {
-	    href = href.replace(/\.html$/, '')
-	    // FIXME: it seems imposible to get this info at runtime
-	    let horrible_hack = {
-		'fs': 'fs_file_system',
-		'vm': 'vm_executing_javascript'
-	    }
-	    href = horrible_hack[href] ? horrible_hack[href] : href + '_' + href
+	    // from some-file.html to a node name; we need to look
+	    // into pre-made menu to search for the node name
+	    let prefix = href.replace(/\.html$/, '') + '_'
+
+	    href = menu.filter(function(val) {
+		return val.find_by_id_prefix(prefix)
+	    })[0].kids[0].id
 	} else {
+	    // convert to node id
 	    href = href.replace(/^(.+)?#/, '')
 	}
 	return `@ref{${href},${text}}`
@@ -301,11 +319,9 @@ let texinfo = function(input, file, opt) {
 	]
 	topmenu = Mustache.render(template("texi.menu"), {menu: menu})
     }
-    return {
-	topmenu: { id: root.kids[0].id, humanName: root.kids[0].humanName },
-	texinfo: [topmenu,
-		  marked(input, { renderer: renderer })].join('')
-    }
+
+    return [topmenu,
+	    marked(input, { renderer: renderer })].join('')
 }
 
 
@@ -381,28 +397,38 @@ if (__filename === process.argv[1]) {
     if (multi) conf.partial = true
     vputs(2, util.inspect(conf))
 
-    let menu = []
-    let ti = []
+    // 1st pass: grap all menus from all files
+    let topmenu = []
     for (let src of input_src()) {
+	let input = input_read(src)
+	topmenu.push(make_menu(input, src))
+    }
+
+    let ti = []
+    // 2td pass: convert each file
+    for (let idx in input_src()) {
+	let src = input_src()[idx]
 	vputs(1, src)
 	let input = input_read(src)
+
 	// conversion md -> texinfo
-	let output = texinfo(input, src, conf)
+	let output = texinfo(topmenu, idx, input, src, conf)
 
 	if (multi) {
 	    // don't print, just grab the converted result
-	    menu.push(output.topmenu)
-	    ti.push(output.texinfo)
+	    ti.push(output)
 	} else {
-	    process.stdout.write(texi(output.texinfo, src, conf))
+	    process.stdout.write(texi(output, src, conf))
 	}
     }
 
     if (multi) {
 	// prepare the top menu
-	menu.push({ id: 'Index', humanName: 'Index' })
-	let topmenu = Mustache.render(template("texi.menu"), {menu: menu})
-	ti.unshift(topmenu)
+	topmenu = topmenu.map(function(val) {
+	    return { id: val.kids[0].id, humanName: val.kids[0].humanName }
+	})
+	topmenu.push({ id: 'Index', humanName: 'Index' })
+	ti.unshift(Mustache.render(template("texi.menu"), {menu: topmenu}))
 
 	// wrap the result
 	conf.partial = false
