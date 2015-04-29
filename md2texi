@@ -59,37 +59,29 @@ let humanName = function(text) {
 	.replace(/\s+/, ' ').trim()
 }
 
-let index = function(text, level, prefix) {
-    prefix += ' '
-    if (level < 2) prefix = ''
-
-    if (text.match(/event:/i)) {
-	text = text.replace(/Event:\s+([^(\[]+).*/, '$1').replace(/['"]/g, '')
-	return [`@findex ${prefix}event ${text}`,
-		`@findex event ${prefix}${text}`].join("\n")
-    } else {
-	text = text.replace(/([^(\[]+).*/, '$1').replace(/['"]/g, '')
-	return `@findex ${prefix}${humanName(text)}`
-    }
-}
-
 class TexiNodeIdGenerator {
-    constructor() {
+    constructor(file) {
+	if (!file) throw new Error('file is required')
 	this.db = {}
+	this.file = file
     }
 
-    static Id(text, level, prefix) {
+    prefix() {
+	return infofile(this.file).replace(/[^\w\-]/g, '-').replace(/-+/g, '-')
+    }
+
+    _id(text) {
 	let id = text.toLowerCase()
 	    .replace(/<.+?>/g, '')  // strip html
 	    .replace(/[^\w]+/g, '_')
 	    .replace(/_+/g, '_')
 	    .replace(/_$/, '')
 
-	return level > 1 ? `${prefix}_${id}` : id
+	return `${this.prefix()}_${id}`
     }
 
-    get(text, level, prefix) {
-	let id = TexiNodeIdGenerator.Id(text, level, prefix)
+    get(text) {
+	let id = this._id(text)
 	let prev = this.db[id]
 	if (util.isNumber(prev)) {
 	    this.db[id] += 1
@@ -100,6 +92,21 @@ class TexiNodeIdGenerator {
 
 	return id
     }
+
+    index(text, level) {
+	let prefix = this.prefix() + ' '
+	if (level < 2) prefix = ''
+
+	if (text.match(/event:/i)) {
+	    text = text.replace(/Event:\s+([^(\[]+).*/, '$1').replace(/['"]/g, '')
+	    return [`@findex ${prefix}event ${text}`,
+		    `@findex event ${prefix}${text}`].join("\n")
+	} else {
+	    text = text.replace(/([^(\[]+).*/, '$1').replace(/['"]/g, '')
+	    return `@findex ${prefix}${humanName(text)}`
+	}
+    }
+
 }
 
 let texi_escape = function(str) {
@@ -160,18 +167,16 @@ class MenuItem {
     }
 }
 
-let make_menu = function(input) {
+let make_menu = function(input, file) {
     input = texi_escape(input)
     let renderer = new marked.Renderer()
-    let node_id_prefix = ''
     let root = new MenuItem(null, null, 0)
     let prev = root
-    let tnidg = new TexiNodeIdGenerator()
+    let tnidg = new TexiNodeIdGenerator(file)
 
     renderer.heading = function (text, level) {
 	text = unescape(text)
-	let id = tnidg.get(text, level, node_id_prefix)
-	if (level === 1) node_id_prefix = id
+	let id = tnidg.get(text)
 
 	let mi = new MenuItem(id, humanName(text), level)
 	prev.kid_add(mi)
@@ -199,27 +204,24 @@ let menuitem2texi = function(root, node_id) {
 }
 
 
-// `file` is only used for error reporting
 let texinfo = function(input, file, opt) {
     input = texi_escape(input)
     let renderer = new marked.Renderer()
 
-    let node_id_prefix = ''
-    let root = make_menu(input)
+    let root = make_menu(input, file)
 //    console.error(util.inspect(root, {depth: null}))
-    let tnidg = new TexiNodeIdGenerator()
+    let tnidg = new TexiNodeIdGenerator(file)
 
     renderer.heading = function (text, level) {
 //	console.error(text)
 	text = unescape(text).replace(/@\w+?{(.+?)}/g, '$1') // strip texinfo
 //	console.error(text)
-	let id = tnidg.get(text, level, node_id_prefix)
-	if (level === 1) node_id_prefix = id
+	let id = tnidg.get(text)
 
 	return [`\n@c ${new Array(78).join('-')}`,
 		`@node ${id}`,
 		`${section(level)} ${humanName(text)}`,
-		index(text, level, node_id_prefix),
+		tnidg.index(text, level),
 		'\n',
 		menuitem2texi(root, id)].join('\n')
     }
@@ -265,7 +267,17 @@ let texinfo = function(input, file, opt) {
 	if (href.match(/^https?:\/\//)) {
 	    return `@uref{${href},${text}}`
 	}
-	href = href.replace(/^(.+)?#/, '').replace(/\.html$/, '')
+	if (href.match(/\.html$/)) {
+	    href = href.replace(/\.html$/, '')
+	    // FIXME: it seems imposible to get this info at runtime
+	    let horrible_hack = {
+		'fs': 'fs_file_system',
+		'vm': 'vm_executing_javascript'
+	    }
+	    href = horrible_hack[href] ? horrible_hack[href] : href + '_' + href
+	} else {
+	    href = href.replace(/^(.+)?#/, '')
+	}
 	return `@ref{${href},${text}}`
     }
 
