@@ -67,14 +67,33 @@ let index = function(text, level, prefix) {
     }
 }
 
-let node_id = function(text, level, prefix) {
-    let id = text.toLowerCase()
-	.replace(/<.+?>/g, '')  // strip html
-	.replace(/[^\w]+/g, '_')
-	.replace(/_+/g, '_')
-	.replace(/_$/, '')
+class TexiNodeIdGenerator {
+    constructor() {
+	this.db = {}
+    }
 
-    return level > 1 ? `${prefix}_${id}` : id
+    static Id(text, level, prefix) {
+	let id = text.toLowerCase()
+	    .replace(/<.+?>/g, '')  // strip html
+	    .replace(/[^\w]+/g, '_')
+	    .replace(/_+/g, '_')
+	    .replace(/_$/, '')
+
+	return level > 1 ? `${prefix}_${id}` : id
+    }
+
+    get(text, level, prefix) {
+	let id = TexiNodeIdGenerator.Id(text, level, prefix)
+	let prev = this.db[id]
+	if (util.isNumber(prev)) {
+	    id = `${id}_${prev + 1}`
+	    this.db[id] += 1
+	} else {
+	    this.db[id] = 0
+	}
+
+	return id
+    }
 }
 
 let texi_escape = function(text) {
@@ -140,10 +159,11 @@ let make_menu = function(input) {
     let node_id_prefix = ''
     let root = new MenuItem(null, null, 0)
     let prev = root
+    let tnidg = new TexiNodeIdGenerator()
 
     renderer.heading = function (text, level) {
 	text = unescape(text)
-	let id = node_id(text, level, node_id_prefix)
+	let id = tnidg.get(text, level, node_id_prefix)
 	if (level === 1) node_id_prefix = id
 
 	let mi = new MenuItem(id, humanName(text), level)
@@ -178,12 +198,13 @@ let texinfo = function(input, opt) {
     let node_id_prefix = ''
     let root = make_menu(input)
 //    console.error(util.inspect(root, {depth: null}))
+    let tnidg = new TexiNodeIdGenerator()
 
     renderer.heading = function (text, level) {
 //	console.error(text)
 	text = unescape(text).replace(/@\w+?{(.+?)}/g, '$1') // strip texinfo
 //	console.error(text)
-	let id = node_id(text, level, node_id_prefix)
+	let id = tnidg.get(text, level, node_id_prefix)
 	if (level === 1) node_id_prefix = id
 
 	return [`\n@c ${new Array(78).join('-')}`,
