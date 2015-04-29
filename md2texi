@@ -96,8 +96,8 @@ class TexiNodeIdGenerator {
     }
 }
 
-let texi_escape = function(text) {
-    return unescape(text).replace(/[@{}]/g, '@$&')
+let texi_escape = function(str) {
+    return str.replace(/[@{}]/g, '@$&')
 }
 
 class MenuItem {
@@ -155,6 +155,7 @@ class MenuItem {
 }
 
 let make_menu = function(input) {
+    input = texi_escape(input)
     let renderer = new marked.Renderer()
     let node_id_prefix = ''
     let root = new MenuItem(null, null, 0)
@@ -193,6 +194,7 @@ let menuitem2texi = function(root, node_id) {
 
 
 let texinfo = function(input, opt) {
+    input = texi_escape(input)
     let renderer = new marked.Renderer()
 
     let node_id_prefix = ''
@@ -218,13 +220,13 @@ let texinfo = function(input, opt) {
     renderer.code = function(code, lang, escaped) {
 	return ['\n',
 		'@example',
-		texi_escape(code),
+		unescape(code),
 		'@end example',
 		'\n'].join("\n")
     }
 
     renderer.codespan = function(text) {
-	return '@code{' + texi_escape(text) + '}'
+	return '@code{' + unescape(text) + '}'
     }
 
     renderer.paragraph = function(text) {
@@ -245,11 +247,11 @@ let texinfo = function(input, opt) {
     }
 
     renderer.em = function(text) {
-	return '@emph{' + texi_escape(text) + '}'
+	return '@emph{' + unescape(text) + '}'
     }
 
     renderer.strong = function(text) {
-	return '@strong{' + texi_escape(text) + '}'
+	return '@strong{' + unescape(text) + '}'
     }
 
     renderer.link = function(href, title, text) {
@@ -269,7 +271,7 @@ let texinfo = function(input, opt) {
     }
 
     renderer.blockquote = function(quote) {
-	return '\n@indentedblock\n' + quote + '\n@end indentedblock\n'
+	return '\n@indentedblock\n' + unescape(quote) + '\n@end indentedblock\n'
     }
 
     let topmenu = ''
