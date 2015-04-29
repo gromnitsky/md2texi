@@ -54,7 +54,9 @@ let section = function(level) {
 }
 
 let humanName = function(text) {
-    return text.replace(/[:,\\]/g, ' ').replace(/\s+/, ' ').trim()
+    return text.replace(/[:,\\]/g, ' ')
+	.replace(/<.+?>/g, '')  // strip html
+	.replace(/\s+/, ' ').trim()
 }
 
 let index = function(text, level, prefix) {
