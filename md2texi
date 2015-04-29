@@ -334,6 +334,7 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     }
 
     renderer.link = function(href, title, text) {
+	text = humanName(text)
 	if (href.match(/^https?:\/\//)) {
 	    return `@uref{${href},${text}}`
 	}
