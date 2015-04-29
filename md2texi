@@ -289,8 +289,11 @@ let texinfo = function(input, file, opt) {
 	]
 	topmenu = Mustache.render(template("texi.menu"), {menu: menu})
     }
-    return [topmenu,
-	    marked(input, { renderer: renderer })].join('')
+    return {
+	topmenu: { id: root.kids[0].id, humanName: root.kids[0].humanName },
+	texinfo: [topmenu,
+		  marked(input, { renderer: renderer })].join('')
+    }
 }
 
 
@@ -331,15 +334,13 @@ let input_read = function(source) {
     }
 }
 
-let texi = function(input, file, opt) {
-    let r = texinfo(input, file, opt)
+let texi = function(ti, file, opt) {
+    if (opt.partial) return ti
     let o = {
 	opt: opt,
 	infofile: infofile(file),
-	texi: r
+	texi: ti
     }
-
-    if (opt.partial) return r
     return Mustache.render(template('texi.doc'), o)
 }
 
@@ -363,12 +364,37 @@ if (__filename === process.argv[1]) {
     conf.tocFull = program.tocFull
     conf.tocShort = program.tocShort
 
-    if (input_src().length > 1) conf.partial = true
+    let multi = input_src().length > 1
 
+    if (multi) conf.partial = true
+    vputs(2, util.inspect(conf))
+
+    let menu = []
+    let ti = []
     for (let src of input_src()) {
 	vputs(1, src)
 	let input = input_read(src)
-	let output = texi(input, src, conf)
+	// conversion md -> texinfo
+	let output = texinfo(input, src, conf)
+
+	if (multi) {
+	    // don't print, just grab the converted result
+	    menu.push(output.topmenu)
+	    ti.push(output.texinfo)
+	} else {
+	    process.stdout.write(texi(output.texinfo, src, conf))
+	}
+    }
+
+    if (multi) {
+	// prepare the top menu
+	menu.push({ id: 'Index', humanName: 'Index' })
+	let topmenu = Mustache.render(template("texi.menu"), {menu: menu})
+	ti.unshift(topmenu)
+
+	// wrap the result
+	conf.partial = false
+	let output = texi(ti.join(""), conf.title || 'no-title', conf)
 	process.stdout.write(output)
     }
 
