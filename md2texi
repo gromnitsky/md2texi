@@ -38,6 +38,8 @@ function unescape(html) {
 
 // return all matching nodes from doc
 let p5selectAll = function(doc, tagName) {
+    if (!doc || !tagName) return []
+
     let all = []
     for (let node of doc.childNodes) {
 	if (node.tagName === tagName) all.push(node)
@@ -52,6 +54,8 @@ let p5selectAll = function(doc, tagName) {
 }
 
 let htmltable2texi = function(html) {
+    if (!html) return ''
+
     let parser = new parse5.Parser()
     let serializer1 = new parse5.Serializer()
     let doc = parser.parseFragment(html)
@@ -60,8 +64,11 @@ let htmltable2texi = function(html) {
     let th = p5selectAll(doc, 'th')
     let cols = th.length
     if (cols === 0) throw new Error('no THs in table')
-    let col_frac = (100/cols/100).toFixed(2).slice(1)
-    let cols_spec = new Array(cols + 1).join(' ' + col_frac)
+    let cols_spec = ' .99'
+    if (cols > 1) {
+	let col_frac = (100/cols/100).toFixed(2).slice(1)
+	cols_spec = new Array(cols + 1).join(' ' + col_frac)
+    }
 
     // texinfo table banner w/ column width spec
     let r = []
@@ -85,7 +92,7 @@ let htmltable2texi = function(html) {
     }
 
     r.push(`\n@end multitable`)
-    return r.join("")
+    return r
 }
 
 let infofile = function(file) {
@@ -359,7 +366,7 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 	// strip comments
 	if (html.match(/^<!--.*?-->$/)) return ''
 	// try to convert a simple table
-	if (html.match(/^<table>/)) return htmltable2texi(html)
+	if (html.match(/^<table>/)) return htmltable2texi(html).join("")
 
 	warnx(`${file}: raw html:\n${html}`)
 	return html
@@ -504,4 +511,6 @@ if (__filename === process.argv[1]) {
 
 } else {
     // for tests
+    exports.p5selectAll = p5selectAll
+    exports.htmltable2texi = htmltable2texi
 }
