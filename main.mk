@@ -77,3 +77,8 @@ $(out)/iojs.pdf: $(out)/iojs.texi
 
 pp-%:
 	@echo "$(strip $($*))" | tr ' ' \\n
+
+.PHONY: test
+test:
+	cd $(mkdir)/test && \
+	../node_modules/.bin/mocha --harmony_classes -u tdd test_*.js

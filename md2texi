@@ -15,7 +15,7 @@ let meta = require('./package.json')
 
 
 String.prototype.html_strip = function() {
-    return this.replace(/<.+?>/g, '')
+    return this.replace(/<(?:.|\n)*?>/gm, '')
 }
 
 String.prototype.texi_escape = function() {
