@@ -8,7 +8,7 @@
 
 @c a title page for TeX
 @titlepage
-@title 
+@title {{{ opt.title }}}
 @subtitle {{ opt.timestamp }}
 @author {{ opt.author }}
 @end titlepage
