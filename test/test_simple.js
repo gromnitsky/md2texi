@@ -82,4 +82,32 @@ suite('String', function() {
 
     })
 
+    test('TexiNodeIdGenerator.get', function () {
+	assert.throws(function() {
+	    new md2texi.TexiNodeIdGenerator()
+	}, /file is required/)
+
+	let t = new md2texi.TexiNodeIdGenerator('foo bar.markdown')
+	assert.equal('foo-bar', t.prefix())
+
+	assert.equal('foo-bar__foo', t.get('_foo'))
+	assert.equal('foo-bar__foo_1', t.get('_foo'))
+	assert.equal('foo-bar__foo_2', t.get('_foo'))
+	assert.equal('foo-bar__foo_3', t.get('_foo     '))
+	assert.equal('foo-bar_class_foo', t.get('  Class: Foo!  '))
+
+    })
+
+    test('TexiNodeIdGenerator.index', function () {
+	let t = new md2texi.TexiNodeIdGenerator('fs')
+
+	assert.equal('@findex fs event Foo\n@findex event fs Foo',
+		     t.index("Event: 'Foo'"))
+	assert.equal('@findex fs event fs.Foo\n@findex event fs.Foo',
+		     t.index("Event: 'fs.Foo'"))
+
+	assert.equal('@findex fs Class Foo', t.index('Class: Foo'))
+	assert.equal('@findex fs.foo.bar', t.index(' fs.foo.bar(baz)    '))
+    })
+
 })

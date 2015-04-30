@@ -137,8 +137,10 @@ class TexiNodeIdGenerator {
 	return infofile(this.file).replace(/[^\w\-]/g, '-').replace(/-+/g, '-')
     }
 
+    // we can be much more versatile here but we need to stay
+    // compatible w/ header-to-id process used in iojs doc tool
     _id(text) {
-	let id = text.toLowerCase().html_strip()
+	let id = text.trim().toLowerCase().html_strip()
 	    .replace(/[^\w]+/g, '_')
 	    .replace(/_+/g, '_')
 	    .replace(/_$/, '')
@@ -160,16 +162,25 @@ class TexiNodeIdGenerator {
     }
 
     index(text, level) {
-	let prefix = this.prefix() + ' '
-	if (level < 2) prefix = ''
+	let that = this
+	let prefix = function(text) {
+	    let prx = that.prefix() + ' '
+	    if (level < 2) prx = ''
+
+	    let t = text.split('.')
+	    if (t[0] === prx.trim()) prx = ''
+	    return prx
+	}
 
 	if (text.match(/event:/i)) {
 	    text = text.replace(/Event:\s+([^(\[]+).*/, '$1').replace(/['"]/g, '')
-	    return [`@findex ${prefix}event ${text}`,
-		    `@findex event ${prefix}${text}`].join("\n")
+	    let ep = this.prefix() + ' '
+	    if (level < 2) ep = ''
+	    return [`@findex ${ep}event ${text}`,
+		    `@findex event ${prefix(text)}${text}`].join("\n")
 	} else {
-	    text = text.replace(/([^(\[]+).*/, '$1').replace(/['"]/g, '')
-	    return `@findex ${prefix}${humanName(text)}`
+	    text = humanName(text.replace(/([^(\[]+).*/, '$1').replace(/['"]/g, ''))
+	    return `@findex ${prefix(text)}${text}`
 	}
     }
 
@@ -513,4 +524,5 @@ if (__filename === process.argv[1]) {
     // for tests
     exports.p5selectAll = p5selectAll
     exports.htmltable2texi = htmltable2texi
+    exports.TexiNodeIdGenerator = TexiNodeIdGenerator
 }
