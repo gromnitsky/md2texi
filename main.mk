@@ -64,6 +64,7 @@ iojs.texi: $(mkdir)/list.txt $(md.src)
 	node --harmony_classes $(mkdir)/md2texi \
 		-t 'The io.is API' -a '@copyright{} io.js Contributors' \
 		--info iojs --toc-short --toc-full \
+		--info-cat 'Software development' \
 		$(md.src) > $@
 
 $(out)/iojs.info: $(out)/iojs.texi

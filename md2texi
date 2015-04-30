@@ -411,6 +411,7 @@ let conf = {
     title: null,
     author: null,
     info: null,
+    infoCat: null,
     partial: false,
     verbose: 0
 }
@@ -440,9 +441,14 @@ let input_read = function(source) {
     }
 }
 
+let version = function() {
+    return `${meta.name}/${meta.version} (${process.platform}; ${process.arch}) node/${process.versions.node}`
+}
+
 let texi = function(ti, file, opt) {
     if (opt.partial) return ti
     opt.timestamp = new Date()
+    opt.generator = version()
     let o = {
 	opt: opt,
 	infofile: infofile(file),
@@ -458,21 +464,23 @@ let texi = function(ti, file, opt) {
 if (__filename === process.argv[1]) {
 
     program
-	.version(meta.version)
+	.version(version())
 	.usage('[options] [file.markdown, ...]')
 	.option('-v, --verbose', 'Be verbose', function() { conf.verbose++ })
 	.option('-p, --partial', 'Generate a partial document')
 	.option('-t, --title <string>', 'Document title')
 	.option('-a, --author <string>', 'Document author')
+	.option('--info-cat <string>', 'Info category')
 	.option('--info <string>', 'Info filename output (for multiple src only)')
 	.option('--toc-full', 'Include full TOC')
 	.option('--toc-short', 'Include short TOC')
 	.parse(process.argv)
 
     conf.partial = program.partial
-    conf.title = program.title
-    conf.author = program.author
-    conf.info = program.info
+    conf.title = program.title || 'No Title'
+    conf.author = program.author || 'Anonymous'
+    conf.infoCat = program.infoCat || 'Miscellaneous'
+    conf.info = program.info || 'multi'
     conf.tocFull = program.tocFull
     conf.tocShort = program.tocShort
 
@@ -516,7 +524,7 @@ if (__filename === process.argv[1]) {
 
 	// wrap the result
 	conf.partial = false
-	let output = texi(ti.join(""), conf.info || 'multi', conf)
+	let output = texi(ti.join(""), conf.info, conf)
 	process.stdout.write(output)
     }
 

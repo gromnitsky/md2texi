@@ -1,14 +1,14 @@
 \input texinfo   @c -*-texinfo-*-
 @setfilename {{ infofile }}.info
 
-@dircategory Software development
+@dircategory {{{ opt.infoCat }}}
 @direntry
-* iojs: (iojs).                 The io.js API.
+* {{infofile}}: ({{infofile}}).                 {{{ opt.title }}}.
 @end direntry
 
 @c a title page for TeX
 @titlepage
-@title {{#opt.title}}{{{opt.title}}}{{/opt.title}}{{^opt.title}}No Title{{/opt.title}}
+@title 
 @subtitle {{ opt.timestamp }}
 @author {{ opt.author }}
 @end titlepage
@@ -19,7 +19,9 @@
 @c info/html
 @ifnottex
 @node Top
-@top {{#opt.title}}{{{opt.title}}}{{/opt.title}}{{^opt.title}}No Title{{/opt.title}}
+@top {{{ opt.title }}}
+
+Generated on {{ opt.timestamp }} by {{{ opt.generator }}}.
 @end ifnottex
 
 {{! here will be menu for Top too }}
