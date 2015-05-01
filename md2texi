@@ -72,7 +72,7 @@ let htmltable2texi = function(html) {
 
     // texinfo table banner w/ column width spec
     let r = []
-    r.push(`@multitable @columnfractions${cols_spec}\n`)
+    r.push(`\n@multitable @columnfractions${cols_spec}\n`)
 
     // texinfo table header
     r.push('@headitem ')
@@ -91,7 +91,7 @@ let htmltable2texi = function(html) {
 	}
     }
 
-    r.push(`\n@end multitable`)
+    r.push(`\n@end multitable\n`)
     return r
 }
 

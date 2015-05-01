@@ -50,7 +50,7 @@ suite('String', function() {
 `
 //	console.error(md2texi.htmltable2texi(table))
 	let r = md2texi.htmltable2texi(table)
-	assert.equal('@multitable @columnfractions .99\n', r[0])
+	assert.equal('\n@multitable @columnfractions .99\n', r[0])
 
 	table = `
 <table>
@@ -70,7 +70,8 @@ suite('String', function() {
 `
 //	console.error(md2texi.htmltable2texi(table).join(""))
 	r = md2texi.htmltable2texi(table)
-	assert.equal(`@multitable @columnfractions .50 .50
+	assert.equal(`
+@multitable @columnfractions .50 .50
 @headitem header1 @tab header2
 
 @item
@@ -78,7 +79,8 @@ suite('String', function() {
 @tab
 2
 
-@end multitable`, r.join(""))
+@end multitable
+`, r.join(""))
 
     })
 
