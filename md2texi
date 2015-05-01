@@ -293,7 +293,6 @@ let menuitem2texi = function(root, node_id) {
     return r
 }
 
-
 let texinfo = function(menu, menu_idx, input, file, opt) {
     input = input.texi_escape()
     let renderer = new marked.Renderer()
@@ -301,17 +300,26 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     let root = menu[menu_idx]
 //    console.error(util.inspect(root, {depth: null}))
     let tnidg = new TexiNodeIdGenerator(file)
+    let headings = []
+    let iojs_link = function() {
+	return `\n@uref{${opt.iojs_doc}/${tnidg.prefix()}.html#${headings[headings.length-1]}}`
+    }
 
     renderer.heading = function (text, level) {
 	text = unescape(text).replace(/@\w+?{(.+?)}/g, '$1') // strip texinfo
 	let id = tnidg.get(text)
+	let r = []
 
-	return [`\n@c ${new Array(78).join('-')}`,
-		`@node ${id}`,
-		`${section(level)} ${humanName(text)}`,
-		tnidg.index(text, level),
-		'\n',
-		menuitem2texi(root, id)].join('\n')
+	if (headings.length > 0 && opt.iojsLink) r.push(iojs_link())
+	headings.push(id)
+
+	r.push(`\n@c ${new Array(78).join('-')}`)
+	r.push(`@node ${id}`)
+	r.push(`${section(level)} ${humanName(text)}`)
+	r.push(tnidg.index(text, level))
+	r.push('\n')
+	r.push(menuitem2texi(root, id))
+	return r.join('\n')
     }
 
     renderer.code = function(code, lang, escaped) {
@@ -397,8 +405,9 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 	topmenu = Mustache.render(template("texi.menu"), {menu: menu})
     }
 
-    return [topmenu,
-	    marked(input, { renderer: renderer })].join('')
+    let r = [topmenu, marked(input, { renderer: renderer })]
+    if (opt.iojsLink) r.push(iojs_link()) // for the last section
+    return r.join('')
 }
 
 
@@ -414,7 +423,9 @@ let conf = {
     info: null,
     infoCat: null,
     partial: false,
-    verbose: 0
+    verbose: 0,
+    iojs_doc: 'https://iojs.org/api',
+    iojsLink: false
 }
 
 let errx = function(msg) {
@@ -475,6 +486,7 @@ if (__filename === process.argv[1]) {
 	.option('--info <string>', 'Info filename output (for multiple src only)')
 	.option('--toc-full', 'Include full TOC')
 	.option('--toc-short', 'Include short TOC')
+	.option('--iojs-link', 'Insert a link to online version for each section')
 	.parse(process.argv)
 
     conf.partial = program.partial
@@ -484,6 +496,7 @@ if (__filename === process.argv[1]) {
     conf.info = program.info || 'multi'
     conf.tocFull = program.tocFull
     conf.tocShort = program.tocShort
+    conf.iojsLink = program.iojsLink
 
     let multi = input_src().length > 1
 
