@@ -52,6 +52,28 @@ You may get warnings like `@ref reference to nonexistent node
 'event_listening_'` during compilation. This is not (hehe) a bug in
 md2texi, but typos in iojs docs.
 
+## Usage
+
+```
+$ node --harmony_classes md2texi -h
+
+  Usage: md2texi [options] [file.markdown, ...]
+
+  Options:
+
+	-h, --help             output usage information
+	-V, --version          output the version number
+	-v, --verbose          Be verbose
+	-p, --partial          Generate a partial document
+	-t, --title <string>   Document title
+	-a, --author <string>  Document author
+	--info-cat <string>    Info category
+	--info <string>        Info filename output (for multiple src only)
+	--toc-full             Include full TOC
+	--toc-short            Include short TOC
+	--iojs-link            Insert a link to online version for each section
+```
+
 ## PDF
 
 If you have texlive & texinfo-tex installed, try to run:
