@@ -60,6 +60,25 @@ If you have texlive & texinfo-tex installed, try to run:
 
 to generate `iojs.pdf` file.
 
+## Bugs
+
+1. Cross-refenses in Emacs Info mode are always prefixed w/ the 'see'
+   word, like this: `For example a (see request to an HTTP server) is a
+   stream`.
+
+	To remove the annoying prefix, add this 2 lines to your `.emacs`
+	file. Beware that other docs in Texinfo format were written w/ the
+	expectation that the word 'see' is always inserted.
+
+		(setq Info-hide-note-references 'hide)
+		(setq Info-refill-paragraphs t)
+
+	Evaluate each line (`C-x C-e`), kill the Info buffer & open it
+	again.
+
+2. Tables look fine in the html output but horrific in the info
+   output. This is an Emacs bug.
+
 ## License
 
 MIT.
