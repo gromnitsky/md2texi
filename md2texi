@@ -369,7 +369,8 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 	    // convert to node id
 	    href = href.replace(/^(.+)?#/, '')
 	}
-	return `@ref{${href},${text}}`
+	// see 'Conditional Commands' in Texinfo manual
+	return `@inlinefmtifelse{html, @ref{${href},${text}}, @inlinefmtifelse{tex, @ref{${href},,${text}}, (@ref{${href},${text}},)}}`
     }
 
     renderer.html = function(html) {
