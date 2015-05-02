@@ -86,13 +86,14 @@ to generate `iojs.pdf` file.
 
 ## Bugs
 
-1. Cross-refenses in Emacs Info mode are always prefixed w/ the 'see'
+1. Cross-references in Emacs Info mode are always prefixed w/ the 'see'
    word, like this: `For example a (see request to an HTTP server) is a
    stream`.
 
 	To remove the annoying prefix, add this 2 lines to your `.emacs`
-	file. Beware that other docs in Texinfo format were written w/ the
-	expectation that the word 'see' is always inserted.
+	file. Beware that other docs (hand-written in Texinfo format) were
+	produced w/ the expectation that the word 'see' is always
+	inserted.
 
 		(setq Info-hide-note-references 'hide)
 		(setq Info-refill-paragraphs t)
