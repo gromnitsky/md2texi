@@ -2,8 +2,9 @@
 # make -f ../md2texi/main.mk DATA=~/tmp/io.js/doc/api info
 
 DATA :=
-DESTDIR := ~
-prefix :=
+OPT :=
+DESTDIR :=
+prefix := ~
 
 .DELETE_ON_ERROR:
 
@@ -58,13 +59,13 @@ install: iojs.info
 
 
 %.texi: %.markdown
-	node --harmony_classes $(mkdir)/md2texi $< > $@
+	node --harmony_classes $(mkdir)/md2texi $(OPT) $< > $@
 
 iojs.texi: $(mkdir)/list.txt $(md.src)
 	node --harmony_classes $(mkdir)/md2texi \
 		-t 'The io.is API' -a '@copyright{} io.js Contributors' \
 		--info iojs --toc-short --toc-full \
-		--info-cat 'Software development' \
+		--info-cat 'Software development' $(OPT) \
 		$(md.src) > $@
 
 $(out)/iojs.info: $(out)/iojs.texi
