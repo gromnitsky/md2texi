@@ -2,15 +2,17 @@
 
 Convert iojs documentation into Texinfo format.
 
+Prebuilt versions (texi, info, html, pdf): http://gromnitsky.users.sourceforge.net/js/iojs/
+
 ## Why?
 
-* Instant offline mode.
 * Read API docs in Emacs.
 * **Indices**. Press `i` in Emacs (or standalone info(1)) and type a
   function name or whatever.
 
 Optional goodies:
 
+* Offline mode.
 * Nice pdf.
 * Full text search.
 * Alternate html representation.
