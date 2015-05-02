@@ -4,6 +4,7 @@ let md2texi = require('../md2texi')
 
 let assert = require('assert')
 let fs = require('fs')
+let util = require('util')
 
 let parse5 = require('parse5')
 
@@ -110,6 +111,36 @@ suite('String', function() {
 
 	assert.equal('@findex fs Class Foo', t.index('Class: Foo'))
 	assert.equal('@findex fs.foo.bar', t.index(' fs.foo.bar(baz)    '))
+    })
+
+    test('make_menu', function() {
+	let md =`
+# this \`is bad\`
+
+<div>as it [is](#is)</div>
+
+## & this is <b>too</b>
+
+### C
+### D
+## E
+### F
+`
+	let menu = md2texi.make_menu(md, 'foo.markdown')
+//	console.error(util.inspect(menu, {depth:null}))
+//	md2texi.texinfo([menu], 0, md, 'foo.markdown', {partial: true})
+	assert.equal('foo_this_is_bad', menu.kids[0].id)
+	assert.equal('foo_this_is_too', menu.kids[0].kids[0].id)
+
+	assert(!menu.find_by_id())
+	assert(!menu.find_by_id('does not exist'))
+
+	assert.equal('foo_d', menu.find_by_id('foo_d').id)
+	assert.equal('foo_f', menu.find_by_id('foo_f').id)
+
+	assert(!menu.find_by_id_prefix())
+	assert(!menu.find_by_id_prefix('?')) // invalid regexp
+	assert.equal('foo_f', menu.find_by_id_prefix('foo_f').id)
     })
 
 })
