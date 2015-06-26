@@ -49,9 +49,9 @@ install: iojs.info
 	@echo
 	@echo '****************************************************************'
 	@echo 'You should probably add $(dir $(info.toplevel)) directory to'
-	@echo 'the INFOPATH env var for info(1) or to the Info-directory-list'
-	@echo 'var for Emacs, otherwise viewers may not be able to find the'
-	@echo 'newly installed doc.'
+	@echo 'the INFOPATH env var for info(1) or to the'
+	@echo 'Info-additional-directory-list var for Emacs, otherwise viewers'
+	@echo 'may not be able to find the newly installed doc.'
 	@echo
 	@echo 'To check the installation, open info(1), press 'm','
 	@echo "type 'iojs' & press Return."
