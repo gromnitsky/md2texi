@@ -59,8 +59,7 @@ install: iojs.info
 
 .PHONY: upload
 upload: $(out)/iojs.texi $(out)/iojs.info.tar.xz $(out)/iojs.html $(out)/iojs.pdf
-	@echo -e '-mkdir /home/user-web/gromnitsky/htdocs/js/iojs \n'\
-		$(foreach file,$^,put $(file) /home/user-web/gromnitsky/htdocs/js/iojs/\\n) | sftp -C -b - gromnitsky@frs.sourceforge.net
+	rsync -avPL --delete -e ssh $^ gromnitsky@web.sourceforge.net:/home/user-web/gromnitsky/htdocs/js/iojs/
 
 %.texi: %.markdown
 	node --harmony_classes $(mkdir)/md2texi $(OPT) $< > $@
