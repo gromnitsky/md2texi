@@ -1,8 +1,8 @@
 # md2texi
 
-Convert iojs documentation into Texinfo format.
+Convert nodejs documentation into Texinfo format.
 
-Prebuilt versions (texi, info, html, pdf): http://gromnitsky.users.sourceforge.net/js/iojs/
+Prebuilt versions (texi, info, html, pdf): http://gromnitsky.users.sourceforge.net/js/nodejs/
 
 ## Why?
 
@@ -18,18 +18,18 @@ Optional goodies:
 * Alternate html representation.
 
 *Warning:* md2texi is not a universal markdown-to-texinfo
-converter. It was written to support iojs doc files only.
+converter. It was written to support nodejs doc files only.
 
 ## Requirements
 
-* Installed iojs 1.8.1
-* iojs cloned repo
+* Installed nodejs 5.1
+* nodejs cloned repo
 * texinfo 5.2
 * GNU make
 
 ## Installation
 
-1. Clone iojs repo.
+1. Clone nodejs repo.
 
 2. Clone md2texi repo, cd to its dir & type `npm install`.
 
@@ -37,27 +37,27 @@ converter. It was written to support iojs doc files only.
 
 4. Type
 
-		$ make -f ~/tmp/md2texi/main.mk DATA=~/tmp/io.js/doc/api info
+		$ make -f ~/tmp/md2texi/main.mk DATA=~/tmp/node/doc/api info
 
-	`iojs.info` file must appear.
+	`nodejs.info` file must appear.
 
-5. Test the file via `info -f iojs.info`
+5. Test the file via `info -f nodejs.info`
 
 6. Type
 
-		$ make -f ~/tmp/md2texi/main.mk DATA=~/tmp/io.js/doc/api install
+		$ make -f ~/tmp/md2texi/main.mk DATA=~/tmp/node/doc/api install
 
-	to install `iojs.info` (it defaults to `~/share/info/`) &
+	to install `nodejs.info` (it defaults to `~/share/info/`) &
 	auto-create a special `dir` file.
 
 You may get warnings like `@ref reference to nonexistent node
-'event_listening_'` during compilation. This is not (hehe) a bug in
-md2texi, but typos in iojs docs.
+'foo_bar'` during the compilation. This is not (hehe) a bug in
+md2texi, but typos in nodejs docs.
 
 ## Usage
 
 ```
-$ node --harmony_classes md2texi -h
+$ md2texi -h
 
   Usage: md2texi [options] [file.markdown, ...]
 
@@ -73,16 +73,16 @@ $ node --harmony_classes md2texi -h
 	--info <string>        Info filename output (for multiple src only)
 	--toc-full             Include full TOC
 	--toc-short            Include short TOC
-	--iojs-link            Insert a link to online version for each section
+	--nodejs-link            Insert a link to online version for each section
 ```
 
 ## PDF
 
 If you have texlive & texinfo-tex installed, try to run:
 
-	$ make -f ~/tmp/md2texi/main.mk DATA=~/tmp/io.js/doc/api pdf
+	$ make -f ~/tmp/md2texi/main.mk DATA=~/tmp/node/doc/api pdf
 
-to generate `iojs.pdf` file.
+to generate `nodejs.pdf` file.
 
 ## Bugs
 

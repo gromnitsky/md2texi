@@ -3,7 +3,7 @@
 
     "name": "md2texi",
     "version": "0.0.1",
-    "description": "Convert io.js documentation to Texinfo format",
+    "description": "Convert nodejs documentation to Texinfo format",
 
     "keywords": [
 	"texinfo",

@@ -138,7 +138,7 @@ class TexiNodeIdGenerator {
     }
 
     // we can be much more versatile here but we need to stay
-    // compatible w/ header-to-id process used in iojs doc tool
+    // compatible w/ header-to-id process used in nodejs doc tool
     _id(text) {
 	let id = text.trim().toLowerCase().html_strip()
 	    .replace(/[^\w]+/g, '_')
@@ -306,8 +306,8 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 //    console.error(util.inspect(root, {depth: null}))
     let tnidg = new TexiNodeIdGenerator(file)
     let headings = []
-    let iojs_link = function() {
-	return `\n@uref{${opt.iojs_doc}/${tnidg.prefix()}.html#${headings[headings.length-1]}}`
+    let nodejs_link = function() {
+	return `\n@uref{${opt.nodejs_doc}/${tnidg.prefix()}.html#${headings[headings.length-1]}}`
     }
 
     renderer.heading = function (text, level) {
@@ -326,7 +326,7 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 //	console.error('id='+id)
 	let r = []
 
-	if (headings.length > 0 && opt.iojsLink) r.push(iojs_link())
+	if (headings.length > 0 && opt.nodejsLink) r.push(nodejs_link())
 	headings.push(id)
 
 	r.push(`\n@c ${new Array(78).join('-')}`)
@@ -422,7 +422,7 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     }
 
     let r = [topmenu, marked(input, { renderer: renderer })]
-    if (opt.iojsLink) r.push(iojs_link()) // for the last section
+    if (opt.nodejsLink) r.push(nodejs_link()) // for the last section
     return r.join('')
 }
 
@@ -440,8 +440,8 @@ let conf = {
     infoCat: null,
     partial: false,
     verbose: 0,
-    iojs_doc: 'https://iojs.org/api',
-    iojsLink: false
+    nodejs_doc: 'https://nodejs.org/api',
+    nodejsLink: false
 }
 
 let errx = function(msg) {
@@ -502,7 +502,7 @@ if (__filename === process.argv[1]) {
 	.option('--info <string>', 'Info filename output (for multiple src only)')
 	.option('--toc-full', 'Include full TOC')
 	.option('--toc-short', 'Include short TOC')
-	.option('--iojs-link', 'Insert a link to online version for each section')
+	.option('--nodejs-link', 'Insert a link to online version for each section')
 	.parse(process.argv)
 
     conf.partial = program.partial
@@ -512,7 +512,7 @@ if (__filename === process.argv[1]) {
     conf.info = program.info || 'multi'
     conf.tocFull = program.tocFull
     conf.tocShort = program.tocShort
-    conf.iojsLink = program.iojsLink
+    conf.nodejsLink = program.nodejsLink
 
     let multi = input_src().length > 1
 

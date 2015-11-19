@@ -26,7 +26,6 @@ punycode.markdown
 querystring.markdown
 readline.markdown
 repl.markdown
-smalloc.markdown
 stream.markdown
 string_decoder.markdown
 timers.markdown
