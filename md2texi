@@ -123,7 +123,9 @@ let section = function(level) {
 }
 
 let humanName = function(text) {
-    return text.replace(/[:,\\]/g, ' ').html_strip().replace(/\s+/, ' ').trim()
+    return text.replace(/[:\\]/g, ' ').
+	replace(/,/g, '@comma{}').
+	html_strip().replace(/\s+/, ' ').trim()
 }
 
 class TexiNodeIdGenerator {
@@ -321,9 +323,9 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 	    ref = ref[0].replace(/@ref{(.+),(.+)}/, '$2')
 	    text = text.replace(/@inlinefmtifelse{.+?}}/, ref) // shaky
 	}
-	text = text.replace(/@\w+?{(.+?)}/g, '$1') // strip texinfo
+	text = text.replace(/@code{(.+?)}/g, '$1') // strip some texinfo
 	let id = tnidg.get(text)
-//	console.error('id='+id)
+//	console.error(`id=${id}, text=${text}`)
 	let r = []
 
 	if (headings.length > 0 && opt.nodejsLink) r.push(nodejs_link())
