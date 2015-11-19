@@ -311,8 +311,17 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     }
 
     renderer.heading = function (text, level) {
-	text = unescape(text).replace(/@\w+?{(.+?)}/g, '$1') // strip texinfo
+//	console.error('\ntext='+text)
+	text = unescape(text)
+	// there could be a link in the mardown heading; we don't
+	// support it because every heading is a texinfo section
+	// header already
+	if (text.match(/@ref{.+?}/)) {
+	    text = text.replace(/@ref{(.+),(.+)}/g, '$2')
+	}
+	text = text.replace(/@\w+?{(.+?)}/g, '$1') // strip texinfo
 	let id = tnidg.get(text)
+//	console.error('id='+id)
 	let r = []
 
 	if (headings.length > 0 && opt.iojsLink) r.push(iojs_link())
@@ -382,8 +391,7 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 	    // convert to node id
 	    href = href.replace(/^(.+)?#/, '')
 	}
-	// see 'Conditional Commands' in Texinfo manual
-	return `@inlinefmtifelse{html, @ref{${href},${text}}, @inlinefmtifelse{tex, @ref{${href},,${text}}, (@ref{${href},${text}},)}}`
+	return `@ref{${href},${text}}`
     }
 
     renderer.html = function(html) {

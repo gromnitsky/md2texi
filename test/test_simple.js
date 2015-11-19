@@ -99,6 +99,10 @@ suite('String', function() {
 	assert.equal('foo-bar__foo_3', t.get('_foo     '))
 	assert.equal('foo-bar_class_foo', t.get('  Class: Foo!  '))
 
+	t = new md2texi.TexiNodeIdGenerator('zlib.markdown')
+	assert.equal('zlib', t.prefix())
+	assert.equal('zlib_zlib_createdeflate_options', t.get('zlib.createDeflate([options])'))
+
     })
 
     test('TexiNodeIdGenerator.index', function () {
