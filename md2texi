@@ -378,8 +378,8 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     }
 
     renderer.link = function(href, title, text) {
-	text = humanName(text)
 	if (href.match(/^https?:\/\//)) {
+	    // `text` could be cleaned up but it seems unnecessary
 	    return `@uref{${href},${text}}`
 	}
 	if (href.match(/\.html$/)) {
@@ -395,6 +395,7 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 	    // convert to node id
 	    href = href.replace(/^(.+)?#/, '')
 	}
+	text = humanName(text)
 	// see 'Conditional Commands' in Texinfo manual
 	return `@inlinefmtifelse{html, @ref{${href},${text}}, @inlinefmtifelse{tex, @ref{${href},,${text}}, (@ref{${href},${text}},)}}`
     }
