@@ -1,6 +1,7 @@
 # md2texi
 
-Convert nodejs documentation into Texinfo format.
+Convert nodejs documentation into Texinfo format (& subsequently to
+pdf, html, info).
 
 Prebuilt versions (texi, info, html, pdf): http://gromnitsky.users.sourceforge.net/js/nodejs/
 
@@ -12,13 +13,13 @@ Prebuilt versions (texi, info, html, pdf): http://gromnitsky.users.sourceforge.n
 
 Optional goodies:
 
-* Offline mode.
-* Nice pdf.
-* Full text search.
-* Alternate html representation.
+* An offline mode.
+* A nice pdf.
+* A full text search.
+* An alternate html representation (for example, as a one big file).
 
 *Warning:* md2texi is not a universal markdown-to-texinfo
-converter. It was written to support nodejs doc files only.
+converter. It was written to support nodejs api doc files only.
 
 ## Requirements
 
@@ -73,7 +74,7 @@ $ md2texi -h
 	--info <string>        Info filename output (for multiple src only)
 	--toc-full             Include full TOC
 	--toc-short            Include short TOC
-	--nodejs-link            Insert a link to online version for each section
+	--nodejs-link          Insert a link to online version for each section
 ```
 
 ## PDF

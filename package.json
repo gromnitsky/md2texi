@@ -2,7 +2,7 @@
     "private": true,
 
     "name": "md2texi",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Convert nodejs documentation to Texinfo format",
 
     "keywords": [
