@@ -122,7 +122,7 @@ let section = function(level) {
     }
 }
 
-let humanName = function(text) {
+let refName = function(text) {
     return text.replace(/[:\\]/g, ' ').
 	replace(/,/g, '@comma{}').
 	html_strip().replace(/\s+/, ' ').trim()
@@ -181,7 +181,7 @@ class TexiNodeIdGenerator {
 	    return [`@findex ${ep}event ${text}`,
 		    `@findex event ${prefix(text)}${text}`].join("\n")
 	} else {
-	    text = humanName(text.replace(/([^(\[]+).*/, '$1').replace(/['"]/g, ''))
+	    text = refName(text.replace(/([^(\[]+).*/, '$1').replace(/['"]/g, ''))
 	    return `@findex ${prefix(text)}${text}`
 	}
     }
@@ -271,11 +271,11 @@ let make_menu = function(input, file) {
     let prev = root
     let tnidg = new TexiNodeIdGenerator(file)
 
-    renderer.heading = function (text, level) {
-	text = unescape(text)
-	let id = tnidg.get(text)
+    renderer.heading = function (text, level, raw) {
+	let tt = md_inline_strip(raw)
+	let id = tnidg.get(tt)
 
-	let mi = new MenuItem(id, humanName(text), level)
+	let mi = new MenuItem(id, refName(tt), level)
 	prev.kid_add(mi)
 	prev = mi
     }
@@ -300,6 +300,18 @@ let menuitem2texi = function(root, node_id) {
     return r
 }
 
+let md_inline_strip = function(markdown) {
+    if (!markdown) return ""
+    if (markdown.match(/\n/)) throw new Error("newline in the input")
+
+    let marked = require('marked')
+    let renderer = new marked.Renderer()
+
+//    renderer.link = function(href, title, text) { return unescape(text) }
+    return unescape(marked(markdown, { renderer: renderer })
+		    .html_strip().trim())
+}
+
 let texinfo = function(menu, menu_idx, input, file, opt) {
     input = input.texi_escape()
     let renderer = new marked.Renderer()
@@ -312,20 +324,10 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 	return `\n@uref{${opt.nodejs_doc}/${tnidg.prefix()}.html#${headings[headings.length-1]}}`
     }
 
-    renderer.heading = function (text, level) {
-//	console.error('\ntext='+text)
-	text = unescape(text)
-	// there could be a link in the mardown heading; we don't
-	// support it because every heading is a texinfo section
-	// header already
-	let ref
-	if ((ref = text.match(/@ref{.+?}/))) {
-	    ref = ref[0].replace(/@ref{(.+),(.+)}/, '$2')
-	    text = text.replace(/@inlinefmtifelse{.+?}}/, ref) // shaky
-	}
-	text = text.replace(/@code{(.+?)}/g, '$1') // strip some texinfo
-	let id = tnidg.get(text)
-//	console.error(`id=${id}, text=${text}`)
+    renderer.heading = function (text, level, raw) {
+	let tt = md_inline_strip(raw)
+	let id = tnidg.get(tt)
+	vputs(1, `id=${id}, heading=${tt}`)
 	let r = []
 
 	if (headings.length > 0 && opt.nodejsLink) r.push(nodejs_link())
@@ -333,8 +335,8 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 
 	r.push(`\n@c ${new Array(78).join('-')}`)
 	r.push(`@node ${id}`)
-	r.push(`${section(level)} ${humanName(text)}`)
-	r.push(tnidg.index(text, level))
+	r.push(`${section(level)} ${refName(tt)}`)
+	r.push(tnidg.index(tt, level))
 	r.push('\n')
 	r.push(menuitem2texi(root, id))
 	return r.join('\n')
@@ -395,7 +397,7 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 	    // convert to node id
 	    href = href.replace(/^(.+)?#/, '')
 	}
-	text = humanName(text)
+	text = refName(text)
 	// see 'Conditional Commands' in Texinfo manual
 	return `@inlinefmtifelse{html, @ref{${href},${text}}, @inlinefmtifelse{tex, @ref{${href},,${text}}, (@ref{${href},${text}},)}}`
     }
@@ -568,4 +570,5 @@ if (__filename === process.argv[1]) {
     exports.TexiNodeIdGenerator = TexiNodeIdGenerator
     exports.make_menu = make_menu
     exports.texinfo = texinfo
+    exports.md_inline_strip = md_inline_strip
 }

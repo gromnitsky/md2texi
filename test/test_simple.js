@@ -148,3 +148,25 @@ suite('String', function() {
     })
 
 })
+
+
+suite('markdown', function() {
+
+    setup(function() {
+    })
+
+    test('md_inline_strip', function () {
+	assert.throws( ()=> md2texi.md_inline_strip("foo\n`bar`"))
+
+	assert.equal("foo bar", md2texi.md_inline_strip('foo `bar`'))
+	assert.equal("foo bar", md2texi.md_inline_strip('foo <p>`bar`</p>'))
+	assert.equal("zlib.inflateSync(buf, options)",
+		     md2texi.md_inline_strip('`zlib`.inflateSync(buf, [options](#link))'))
+	assert.equal("transform._flush(callback)",
+		     md2texi.md_inline_strip("transform.\\_flush(callback)"))
+
+	assert.equal("Event: 'close'",
+		     md2texi.md_inline_strip("Event: 'close'"))
+    })
+
+})
