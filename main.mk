@@ -2,7 +2,7 @@
 # make -f ../md2texi/main.mk DATA=~/tmp/node/doc/api info
 
 DATA :=
-OPT :=
+OPTS :=
 DESTDIR :=
 prefix := ~
 
@@ -62,13 +62,13 @@ upload: $(out)/nodejs.texi $(out)/nodejs.info.tar.xz $(out)/nodejs.html $(out)/n
 	rsync -avPL --delete -e ssh $^ gromnitsky@web.sourceforge.net:/home/user-web/gromnitsky/htdocs/js/nodejs/
 
 %.texi: %.markdown
-	node $(mkdir)/md2texi $(OPT) $< > $@
+	node $(mkdir)/md2texi $(OPTS) $< > $@
 
 nodejs.texi: $(mkdir)/list.txt $(md.src)
 	node $(mkdir)/md2texi \
 		-t 'The Node.js API' -a '@copyright{} Node.js Contributors' \
 		--info nodejs --toc-short --toc-full \
-		--info-cat 'Software development' $(OPT) \
+		--info-cat 'Software development' $(OPTS) \
 		$(md.src) > $@
 
 $(out)/nodejs.info: $(out)/nodejs.texi
@@ -89,4 +89,4 @@ pp-%:
 .PHONY: test
 test:
 	cd $(mkdir)/test && \
-	../node_modules/.bin/mocha -u tdd test_*.js
+	../node_modules/.bin/mocha -u tdd $(OPTS) test_*.js
