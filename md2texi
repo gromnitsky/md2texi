@@ -22,9 +22,9 @@ String.prototype.texi_escape = function() {
     return this.replace(/[@{}]/g, '@$&')
 }
 
-// copied from marked package
-function unescape(html) {
-    return html.replace(/&([#\w]+);/g, function(_, n) {
+// unescape() from marked package
+String.prototype.html_unescape = function() {
+    return this.replace(/&([#\w]+);/g, function(_, n) {
 	n = n.toLowerCase();
 	if (n === 'colon') return ':';
 	if (n.charAt(0) === '#') {
@@ -306,10 +306,9 @@ let md_inline_strip = function(markdown) {
 
     let marked = require('marked')
     let renderer = new marked.Renderer()
-
-//    renderer.link = function(href, title, text) { return unescape(text) }
-    return unescape(marked(markdown, { renderer: renderer })
-		    .html_strip().trim())
+//    renderer.link = function(href, title, text) { return text.html_unescape() }
+    return marked(markdown, { renderer: renderer })
+	.html_unescape().html_strip().trim()
 }
 
 let texinfo = function(menu, menu_idx, input, file, opt) {
@@ -345,17 +344,17 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     renderer.code = function(code, lang, escaped) {
 	return ['\n',
 		'@example',
-		unescape(code),
+		code.html_unescape(),
 		'@end example',
 		'\n'].join("\n")
     }
 
     renderer.codespan = function(text) {
-	return '@code{' + unescape(text) + '}'
+	return '@code{' + text.html_unescape() + '}'
     }
 
     renderer.paragraph = function(text) {
-	return '\n' + unescape(text) + '\n'
+	return '\n' + text.html_unescape() + '\n'
     }
 
     renderer.list = function(body, ordered) {
@@ -368,15 +367,15 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     }
 
     renderer.listitem = function(text) {
-	return '\n@item ' + unescape(text)
+	return '\n@item ' + text.html_unescape()
     }
 
     renderer.em = function(text) {
-	return '@emph{' + unescape(text) + '}'
+	return '@emph{' + text.html_unescape() + '}'
     }
 
     renderer.strong = function(text) {
-	return '@strong{' + unescape(text) + '}'
+	return '@strong{' + text.html_unescape() + '}'
     }
 
     renderer.link = function(href, title, text) {
@@ -414,7 +413,7 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     }
 
     renderer.blockquote = function(quote) {
-	return '\n@indentedblock\n' + unescape(quote) + '\n@end indentedblock\n'
+	return '\n@indentedblock\n' + quote.html_unescape() + '\n@end indentedblock\n'
     }
 
     let topmenu = ''
