@@ -5,6 +5,9 @@ DATA :=
 OPTS :=
 DESTDIR :=
 prefix := ~
+meta.title := The Node.js API
+meta.authors := Node.js Contributors
+meta.authors.texi := @copyright{} $(meta.authors)
 
 .DELETE_ON_ERROR:
 
@@ -66,7 +69,7 @@ upload: $(out)/nodejs.texi $(out)/nodejs.info.tar.xz $(out)/nodejs.html $(out)/n
 
 nodejs.texi: $(mkdir)/list.txt $(md.src)
 	node $(mkdir)/md2texi \
-		-t 'The Node.js API' -a '@copyright{} Node.js Contributors' \
+		-t '$(meta.title)' -a '$(meta.authors.texi)' \
 		--info nodejs --toc-short --toc-full \
 		--info-cat 'Software development' $(OPTS) \
 		$(md.src) > $@
@@ -82,6 +85,8 @@ $(out)/nodejs.html: $(out)/nodejs.texi
 
 $(out)/nodejs.pdf: $(out)/nodejs.texi
 	texi2pdf -q -t '@afourpaper' $<
+	-exiftool -Creator="`node $(mkdir)/md2texi -V`" \
+		-Title='$(meta.title)' -Author='$(meta.authors)' $@
 
 pp-%:
 	@echo "$(strip $($*))" | tr ' ' \\n
