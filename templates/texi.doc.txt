@@ -21,7 +21,7 @@
 @node Top
 @top {{{ opt.title }}}
 
-Generated on {{ opt.timestamp }} by {{{ opt.generator }}}.
+{{#opt.banner}}Generated on {{ opt.timestamp }} by {{{ opt.generator }}}.{{/opt.banner}}
 @end ifnottex
 
 {{! here will be menu for Top too }}

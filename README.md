@@ -18,8 +18,9 @@ Optional goodies:
 * A full text search.
 * An alternate html representation (for example, as a one big file).
 
-*Warning:* md2texi is not a universal markdown-to-texinfo
-converter. It was written to support nodejs api doc files only.
+**Warning:** although md2texi *may* be used as a universal
+markdown-to-texinfo converter, it was written specifically to support
+nodejs api doc files.
 
 ## Requirements
 
@@ -74,7 +75,8 @@ $ md2texi -h
 	--info <string>        Info filename output (for multiple src only)
 	--toc-full             Include full TOC
 	--toc-short            Include short TOC
-	--nodejs-link          Insert a link to online version for each section
+	--nodejs-api-doc       Turn 'nodejs-api-doc' plugin on
+	--nodejs-link          Insert a link to an online version for each section
 ```
 
 ## PDF

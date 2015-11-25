@@ -10,6 +10,7 @@ let marked = require('marked')
 let program = require('commander')
 let Mustache = require('mustache')
 let parse5 = require('parse5')
+let xdg = require('xdg-basedir')
 
 let meta = require('./package.json')
 
@@ -165,30 +166,6 @@ class TexiNodeIdGenerator {
 
 	return id
     }
-
-    index(text, level) {
-	let that = this
-	let prefix = function(text) {
-	    let prx = that.prefix() + ' '
-	    if (level < 2) prx = ''
-
-	    let t = text.split('.')
-	    if (t[0] === prx.trim()) prx = ''
-	    return prx
-	}
-
-	if (text.match(/event:/i)) {
-	    text = text.replace(/Event:\s+([^(\[]+).*/, '$1').replace(/['"]/g, '')
-	    let ep = this.prefix() + ' '
-	    if (level < 2) ep = ''
-	    return [`@findex ${ep}event ${text}`,
-		    `@findex event ${prefix(text)}${text}`].join("\n")
-	} else {
-	    text = refName(text.replace(/([^(\[]+).*/, '$1').replace(/['"]/g, ''))
-	    return `@findex ${prefix(text)}${text}`
-	}
-    }
-
 }
 
 class MenuItem {
@@ -314,17 +291,13 @@ let md_inline_strip = function(markdown) {
 	.html_unescape().html_strip().trim()
 }
 
-let texinfo = function(menu, menu_idx, input, file, opt) {
+let texinfo = function(menu, menu_idx, input, file, opt, pl) {
     input = input.texi_escape()
     let renderer = new marked.Renderer()
 
     let root = menu[menu_idx]
 //    console.error(util.inspect(root, {depth: null}))
     let tnidg = new TexiNodeIdGenerator(file)
-    let headings = []
-    let nodejs_link = function() {
-	return `\n@uref{${opt.nodejs_doc}/${tnidg.prefix()}.html#${headings[headings.length-1]}}`
-    }
 
     renderer.heading = function (text, level, raw) {
 	let tt = md_inline_strip(raw)
@@ -332,13 +305,20 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
 	vputs(1, `id=${id}, heading=${tt}`)
 	let r = []
 
-	if (headings.length > 0 && opt.nodejsLink) r.push(nodejs_link())
-	headings.push(id)
+	// run plugins hook
+	pl.plugins.forEach( (idx) => {
+	    if (idx.on && idx.section_header_before_hook)
+		idx.section_header_before_hook(tnidg, id, r)
+	})
 
 	r.push(`\n@c ${new Array(78).join('-')}`)
 	r.push(`@node ${id}`)
 	r.push(`${section(level)} ${refName(tt)}`)
-	r.push(tnidg.index(tt, level))
+	// run plugins hook
+	pl.plugins.forEach( (idx) => {
+	    if (idx.on && idx.section_header_hook)
+		idx.section_header_hook(tnidg, tt, level, r)
+	})
 	r.push('\n')
 	r.push(menuitem2texi(root, id))
 	return r.join('\n')
@@ -429,7 +409,11 @@ let texinfo = function(menu, menu_idx, input, file, opt) {
     }
 
     let r = [topmenu, marked(input, { renderer: renderer })]
-    if (opt.nodejsLink) r.push(nodejs_link()) // for the last section
+    // run plugins hook for the last section
+    pl.plugins.forEach( (idx) => {
+	if (idx.on && idx.section_header_before_hook)
+	    idx.section_header_before_hook(tnidg, null, r)
+    })
     return r.join('')
 }
 
@@ -447,8 +431,8 @@ let conf = {
     infoCat: null,
     partial: false,
     verbose: 0,
-    nodejs_doc: 'https://nodejs.org/api',
-    nodejsLink: false
+    banner: true,
+    name: meta.name
 }
 
 let errx = function(msg) {
@@ -492,6 +476,62 @@ let texi = function(ti, file, opt) {
     return Mustache.render(template('texi.doc'), o)
 }
 
+class PluginsLoader {
+    // `program` is a Commander object
+    // `conf` is a hash
+    constructor(program, conf) {
+	this.program = program
+	this.conf = conf
+
+	this.plugins = []
+	this.files = []
+	let dirs = [__dirname, path.join(xdg.data, this.conf.name)]
+	    .map( (idx) => path.join(idx, 'plugins') )
+	try {
+	    dirs.forEach( (idx) => this.files = this.files
+			  .concat(fs.readdirSync(idx)
+				  .map( (bfile) => path.resolve(idx, bfile) )) )
+	} catch (e) {}
+
+	this.files = this.files.filter( (idx) => idx.match(/\.js$/) )
+	this.load()
+    }
+
+    load() {
+	this.files.forEach( (idx) => {
+	    let pn = require(idx)
+	    pn.conf = pn.conf || {}
+	    pn.meta = pn.meta || {}
+	    pn.lib = {}
+
+	    pn.lib.refName = refName
+	    pn.meta.name = path.basename(idx, ".js")
+	    this.program.option(`--${pn.meta.name}`, `Turn '${pn.meta.name}' plugin on`)
+	    if (pn.clo_names.length > 0) pn.clo_setup(this.program)
+
+	    this.plugins.push(pn)
+	})
+    }
+
+    // should be invoked after program.parse()
+    updateConf() {
+	this.plugins.forEach( (pn) => {
+	    pn.clo_names.forEach( (clo) => {
+		this.conf[clo] = this.program[clo]
+		pn.conf[clo] = this.program[clo]
+	    })
+	    pn.on = this.program[PluginsLoader.CommanderName(pn.meta.name)]
+	})
+    }
+
+    // --foo-bar => fooBar
+    static CommanderName(optname) {
+	return optname.replace('--', '').replace('no-', '')
+	    .split('-').reduce( (str, word) => {
+		return str + word[0].toUpperCase() + word.slice(1)
+	    })
+    }
+}
 
 /*
   Main
@@ -509,8 +549,10 @@ if (__filename === process.argv[1]) {
 	.option('--info <string>', 'Info filename output (for multiple src only)')
 	.option('--toc-full', 'Include full TOC')
 	.option('--toc-short', 'Include short TOC')
-	.option('--nodejs-link', 'Insert a link to online version for each section')
-	.parse(process.argv)
+	.option('--no-banner', "Don't insert 'Generated by ...'")
+
+    let pl = new PluginsLoader(program, conf)
+    program.parse(process.argv)
 
     conf.partial = program.partial
     conf.title = program.title || 'No Title'
@@ -519,7 +561,8 @@ if (__filename === process.argv[1]) {
     conf.info = program.info || 'multi'
     conf.tocFull = program.tocFull
     conf.tocShort = program.tocShort
-    conf.nodejsLink = program.nodejsLink
+    conf.banner = program.banner
+    pl.updateConf()
 
     let multi = input_src().length > 1
 
@@ -541,7 +584,7 @@ if (__filename === process.argv[1]) {
 	let input = input_read(src)
 
 	// conversion md -> texinfo
-	let output = texinfo(topmenu, idx, input, src, conf)
+	let output = texinfo(topmenu, idx, input, src, conf, pl)
 
 	if (multi) {
 	    // don't print, just grab the converted result
@@ -567,6 +610,7 @@ if (__filename === process.argv[1]) {
 
 } else {
     // for tests
+    exports.refName = refName
     exports.p5selectAll = p5selectAll
     exports.htmltable2texi = htmltable2texi
     exports.TexiNodeIdGenerator = TexiNodeIdGenerator
