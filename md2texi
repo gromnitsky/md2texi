@@ -22,18 +22,21 @@ String.prototype.texi_escape = function() {
     return this.replace(/[@{}]/g, '@$&')
 }
 
-// unescape() from marked package
 String.prototype.html_unescape = function() {
     return this.replace(/&([#\w]+);/g, function(_, n) {
-	n = n.toLowerCase();
-	if (n === 'colon') return ':';
+	n = n.toLowerCase()
+	if (n === 'colon') return ':'
+	if (n === 'amp') return '&'
+	if (n === 'lt') return '<'
+	if (n === 'gt') return '>'
+	if (n === 'quot') return '"'
 	if (n.charAt(0) === '#') {
 	    return n.charAt(1) === 'x'
 		? String.fromCharCode(parseInt(n.substring(2), 16))
 		: String.fromCharCode(+n.substring(1));
 	}
-	return '';
-    });
+	return ''
+    })
 }
 
 // return all matching nodes from doc
