@@ -137,7 +137,7 @@ suite('String', function() {
 //	console.error(util.inspect(menu, {depth:null}))
 //	md2texi.texinfo([menu], 0, md, 'foo.markdown', {partial: true})
 	assert.equal('foo_this_is_bad', menu.kids[0].id)
-	assert.equal('foo_this_is_too', menu.kids[0].kids[0].id)
+	assert.equal('foo__this_is_too', menu.kids[0].kids[0].id)
 
 	assert(!menu.find_by_id())
 	assert(!menu.find_by_id('does not exist'))
