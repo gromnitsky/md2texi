@@ -1,6 +1,9 @@
 'use strict';
 
 let md2texi = require('../md2texi')
+let nodejs_api_doc = require('../plugins/nodejs-api-doc')
+nodejs_api_doc.lib = {}
+nodejs_api_doc.lib.refName = md2texi.refName
 
 let assert = require('assert')
 let fs = require('fs')
@@ -105,16 +108,16 @@ suite('String', function() {
 
     })
 
-    test('TexiNodeIdGenerator.index', function () {
+    test('nodejs_api_doc.index', function () {
 	let t = new md2texi.TexiNodeIdGenerator('fs')
 
 	assert.equal('@findex fs event Foo\n@findex event fs Foo',
-		     t.index("Event: 'Foo'"))
+		     nodejs_api_doc.index(t, "Event: 'Foo'"))
 	assert.equal('@findex fs event fs.Foo\n@findex event fs.Foo',
-		     t.index("Event: 'fs.Foo'"))
+		     nodejs_api_doc.index(t, "Event: 'fs.Foo'"))
 
-	assert.equal('@findex fs Class Foo', t.index('Class: Foo'))
-	assert.equal('@findex fs.foo.bar', t.index(' fs.foo.bar(baz)    '))
+	assert.equal('@findex fs Class Foo', nodejs_api_doc.index(t, 'Class: Foo'))
+	assert.equal('@findex fs.foo.bar', nodejs_api_doc.index(t, ' fs.foo.bar(baz)    '))
     })
 
     test('make_menu', function() {

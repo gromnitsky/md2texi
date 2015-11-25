@@ -65,10 +65,10 @@ upload: $(out)/nodejs.texi $(out)/nodejs.info.tar.xz $(out)/nodejs.html $(out)/n
 	rsync -avPL --delete -e ssh $^ gromnitsky@web.sourceforge.net:/home/user-web/gromnitsky/htdocs/js/nodejs/
 
 %.texi: %.markdown
-	node $(mkdir)/md2texi $(OPTS) $< > $@
+	$(mkdir)/md2texi --nodejs-api-doc $(OPTS) $< > $@
 
 nodejs.texi: $(mkdir)/list.txt $(md.src)
-	node $(mkdir)/md2texi \
+	$(mkdir)/md2texi --nodejs-api-doc \
 		-t '$(meta.title)' -a '$(meta.authors.texi)' \
 		--info nodejs --toc-short --toc-full \
 		--info-cat 'Software development' $(OPTS) \
@@ -85,7 +85,7 @@ $(out)/nodejs.html: $(out)/nodejs.texi
 
 $(out)/nodejs.pdf: $(out)/nodejs.texi
 	texi2pdf -q -t '@afourpaper' $<
-	-exiftool -Creator="`node $(mkdir)/md2texi -V`" \
+	-exiftool -Creator="`$(mkdir)/md2texi -V`" \
 		-Title='$(meta.title)' -Author='$(meta.authors)' $@
 
 pp-%:
