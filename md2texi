@@ -100,7 +100,7 @@ let htmltable2texi = function(html) {
 }
 
 let infofile = function(file) {
-    return path.basename(file, '.markdown')
+    return path.basename(file).replace(/\.[^.]+$/, '')
 }
 
 let template = function(type) {
