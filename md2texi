@@ -629,4 +629,6 @@ if (__filename === process.argv[1]) {
     exports.make_menu = make_menu
     exports.texinfo = texinfo
     exports.md_inline_strip = md_inline_strip
+
+    vputs = () => {}
 }
