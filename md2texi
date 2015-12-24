@@ -183,7 +183,19 @@ class MenuItem {
 	    this.kids.push(menuitem)
 	    menuitem.parent = this
 	} else {
-	    let parent = this.find(menuitem.level - 1)
+	    let parent
+	    try {
+		parent = this.find(menuitem.level - 1)
+	    } catch (err) {
+		// the node an orphan, try one more time.  (makeinfo,
+		// during the conversion, can auto-raise levels
+		// automatically)
+		warnx(`node ${menuitem.id} at level ${menuitem.level} is an orphan`)
+		menuitem.level -= 1
+		// recursion!
+		this.kid_add(menuitem)
+		return
+	    }
 //	    console.error('%s < %s', menuitem.id, parent.id)
 	    parent.kids.push(menuitem)
 	    menuitem.parent = parent

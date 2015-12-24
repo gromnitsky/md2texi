@@ -150,6 +150,16 @@ suite('String', function() {
 	assert.equal('foo_f', menu.find_by_id_prefix('foo_f').id)
     })
 
+    test('make_menu broken', function() {
+	let md =`# First
+#### Fourth1
+### Third2
+## Second
+### Third2
+`
+	let menu = md2texi.make_menu(md, 'foo.markdown')
+    })
+
 })
 
 
