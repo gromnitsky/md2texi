@@ -24,7 +24,7 @@ nodejs api doc files.
 
 ## Requirements
 
-* Installed nodejs 5.1
+* Installed nodejs 5.3
 * nodejs cloned repo
 * texinfo 5.2
 * GNU make
@@ -43,7 +43,7 @@ nodejs api doc files.
 
 	`nodejs.info` file must appear.
 
-5. Test the file via `info -f nodejs.info`
+5. Test the file via `info -f ./nodejs.info` (yes, `./` is important)
 
 6. Type
 
