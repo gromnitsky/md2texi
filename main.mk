@@ -25,11 +25,11 @@ endif
 
 $(if $(DATA),,$(error DATA must point to nodejs docs dir))
 
-vpath %.markdown $(DATA)
+vpath %.md $(DATA)
 md.src.list := $(shell cat $(mkdir)/list.txt)
 md.src := $(addprefix $(DATA)/, $(md.src.list))
 
-texi.api := $(patsubst $(DATA)/%.markdown, $(out)/%.texi, $(md.src))
+texi.api := $(patsubst $(DATA)/%.md, $(out)/%.texi, $(md.src))
 
 all := $(texi.api) $(out)/nodejs.texi $(out)/nodejs.info
 
@@ -64,7 +64,7 @@ install: nodejs.info
 upload: $(out)/nodejs.texi $(out)/nodejs.info.tar.xz $(out)/nodejs.html $(out)/nodejs.pdf
 	rsync -avPL --delete -e ssh $^ gromnitsky@web.sourceforge.net:/home/user-web/gromnitsky/htdocs/js/nodejs/
 
-%.texi: %.markdown
+%.texi: %.md
 	$(mkdir)/md2texi --nodejs-api-doc $(OPTS) $< > $@
 
 nodejs.texi: $(mkdir)/list.txt $(md.src)
