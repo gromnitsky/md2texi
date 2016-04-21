@@ -18,6 +18,8 @@ Optional goodies:
 * A full text search.
 * An alternate html representation (for example, as a one big file).
 
+![A screenshot of running Emacs](https://raw.github.com/gromnitsky/md2texi/master/screenshot1.png)
+
 **Warning:** although md2texi *may* be used as a universal
 markdown-to-texinfo converter, it was written specifically to support
 nodejs api doc files.
