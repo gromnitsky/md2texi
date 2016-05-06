@@ -306,6 +306,7 @@ let md_inline_strip = function(markdown) {
 let texinfo = function(menu, menu_idx, input, file, opt, pl) {
     input = input.texi_escape()
     let renderer = new marked.Renderer()
+    let recursive_renderer = renderer
 
     let root = menu[menu_idx]
 //    console.error(util.inspect(root, {depth: null}))
@@ -337,6 +338,15 @@ let texinfo = function(menu, menu_idx, input, file, opt, pl) {
     }
 
     renderer.code = function(code, lang, escaped) {
+	// could be metadata
+	for (let idx of pl.plugins) {
+	    if (idx.on && idx.code_hook) {
+		let r = idx.code_hook(code, lang, recursive_renderer)
+		if (r.terminal) return r.code
+		code = r.code
+	    }
+	}
+
 	return ['\n',
 		'@example',
 		code.html_unescape(),

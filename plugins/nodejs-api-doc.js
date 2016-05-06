@@ -6,6 +6,8 @@ let fs = require('fs')
 let path = require('path')
 let common = require(path.join(__dirname, path.basename(__filename, '.js'), 'common.js'))
 
+let marked = require('marked')
+
 exports.conf = {
     url: 'https://nodejs.org/api'
 }
@@ -69,7 +71,27 @@ exports.html_hook = function(html) {
     if (meta.deprecated) r.push(`Deprecated since: ${meta.deprecated.join(', ')}`)
 
     return {
-	html: r.length ? "\n@smalldisplay\n" + r.join('; ') + "\n@end smalldisplay\n" : '',
+	html: r.length ? "\n@smallindentedblock\n" + r.join('; ') + "\n@end smallindentedblock\n" : '',
 	terminal: true // means no other plugins w/ `html_hook` should touch it
+    }
+}
+
+exports.code_hook = function(code, lang, recursive_renderer) {
+    if (lang) return {code}
+    if (!code) return {code: ''}
+    if (!code.match(/^\s*Stability:\s/)) return {code}
+
+    let render = (text) => marked(text, { renderer: recursive_renderer })
+    // even recursive_renderer doesn't know about footnote-style links (why?),
+    // thus we use this ugliness to extract a link text
+    code = code.replace(/\[`?([\w, .\]\[)(]+)`?\](\[[^\]\[]+\])/g, '`$1`')
+
+    return {
+	terminal: true,
+	code: ['\n',
+	       '@smallindentedblock',
+	       render(code).trim(),
+	       '@end smallindentedblock',
+	       '\n'].join("\n")
     }
 }
