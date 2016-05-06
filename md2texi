@@ -398,6 +398,16 @@ let texinfo = function(menu, menu_idx, input, file, opt, pl) {
 
     renderer.html = function(html) {
 	html = html.trim()
+
+	// could be metadata in comments
+	for (let idx of pl.plugins) {
+	    if (idx.on && idx.html_hook) {
+		let r = idx.html_hook(html)
+		if (r.terminal) return r.html
+		html = r.html
+	    }
+	}
+
 	// strip comments
 	if (html.match(/^<!--.*?-->$/)) return ''
 	// try to convert a simple table

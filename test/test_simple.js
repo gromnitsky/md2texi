@@ -108,6 +108,31 @@ suite('String', function() {
 
     })
 
+    test('nodejs_api_doc.html_hook', function() {
+	let func = nodejs_api_doc.html_hook
+	assert.deepEqual({html: ''}, func())
+	assert.deepEqual({html: ''}, func(''))
+
+	assert.deepEqual({
+	    html: `\n@smalldisplay\nAdded in: v5.3.0, v4.2.0; Deprecated since: v2.0.0\n@end smalldisplay\n`,
+	    terminal: true
+	}, func(`<!-- YAML
+added:
+  - v5.3.0
+  - v4.2.0
+deprecated: v2.0.0
+-->`))
+
+	assert.deepEqual({
+	    html: '',
+	    terminal: true
+	}, func(`<!-- YAML
+type: property
+name: [index]
+-->`))
+
+    })
+
     test('nodejs_api_doc.index', function () {
 	let t = new md2texi.TexiNodeIdGenerator('fs')
 

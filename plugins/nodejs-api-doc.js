@@ -4,6 +4,7 @@
 
 let fs = require('fs')
 let path = require('path')
+let common = require(path.join(__dirname, path.basename(__filename, '.js'), 'common.js'))
 
 exports.conf = {
     url: 'https://nodejs.org/api'
@@ -53,4 +54,22 @@ exports.section_header_before_hook = function(tnidg, id, header) {
 	header.push(link(tnidg.prefix()) )
 
     if (id) headings.push(id)
+}
+
+// In the same spirit as that of the nodejs doc tool we ignore unknown
+// metadata entries (I don't like this approach)
+exports.html_hook = function(html) {
+    if (!html) return { html: '' }
+    if (!common.isYAMLBlock(html)) return {html}
+
+    let meta = common.extractAndParseYAML(html)
+    let r = []
+
+    if (meta.added) r.push(`Added in: ${meta.added.join(', ')}`)
+    if (meta.deprecated) r.push(`Deprecated since: ${meta.deprecated.join(', ')}`)
+
+    return {
+	html: r.length ? "\n@smalldisplay\n" + r.join('; ') + "\n@end smalldisplay\n" : '',
+	terminal: true // means no other plugins w/ `html_hook` should touch it
+    }
 }
