@@ -76,21 +76,18 @@ exports.html_hook = function(html) {
     }
 }
 
-exports.code_hook = function(code, lang, recursive_renderer) {
+exports.code_hook = function(code, lang, links, recursive_renderer) {
     if (lang) return {code}
     if (!code) return {code: ''}
     if (!code.match(/^\s*Stability:\s/)) return {code}
 
     let render = (text) => marked(text, { renderer: recursive_renderer })
-    // even recursive_renderer doesn't know about footnote-style links (why?),
-    // thus we use this ugliness to extract a link text
-    code = code.replace(/\[`?([\w, .\]\[)(]+)`?\](\[[^\]\[]+\])/g, '`$1`')
 
     return {
 	terminal: true,
 	code: ['\n',
 	       '@smallindentedblock',
-	       render(code).trim(),
+	       render(code + "\n\n" + links).trim(),
 	       '@end smallindentedblock',
 	       '\n'].join("\n")
     }

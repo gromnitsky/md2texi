@@ -207,4 +207,20 @@ suite('markdown', function() {
 		     md2texi.md_inline_strip("Event: 'close'"))
     })
 
+    test('md_extract_links', function () {
+	assert.equal('', md2texi.md_extract_links())
+
+	assert.equal(`[iterator]: https://example.com
+[\`util.inspect()\`]: util.html#util_util_inspect_object_options`,
+		     md2texi.md_extract_links(`
+[iterator]:     https://example.com
+[\`util.inspect()\`]:     util.html#util_util_inspect_object_options
+`))
+
+	assert.equal('[iterator]: https://example.com',
+		     md2texi.md_extract_links(`
+omglol
+[iterator]:     https://example.com
+`))
+    })
 })

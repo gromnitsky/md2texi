@@ -296,11 +296,21 @@ let md_inline_strip = function(markdown) {
     if (!markdown) return ""
     if (markdown.match(/\n/)) throw new Error("newline in the input")
 
-    let marked = require('marked')
     let renderer = new marked.Renderer()
 //    renderer.link = function(href, title, text) { return text.html_unescape() }
     return marked(markdown, { renderer: renderer })
 	.html_unescape().html_strip().trim()
+}
+
+// return a string that consists solely of footnote-style links
+let md_extract_links = function(markdown) {
+    if (!markdown) return ''
+
+    let lexems = marked.lexer(markdown)
+    let r = []
+    for (let key in lexems.links)
+	r.push(`[${key}]: ${lexems.links[key].href}`)
+    return r.join("\n")
 }
 
 let texinfo = function(menu, menu_idx, input, file, opt, pl) {
@@ -311,6 +321,7 @@ let texinfo = function(menu, menu_idx, input, file, opt, pl) {
     let root = menu[menu_idx]
 //    console.error(util.inspect(root, {depth: null}))
     let tnidg = new TexiNodeIdGenerator(file)
+    let allthelinks = md_extract_links(input)
 
     renderer.heading = function (text, level, raw) {
 	let tt = md_inline_strip(raw)
@@ -341,8 +352,12 @@ let texinfo = function(menu, menu_idx, input, file, opt, pl) {
 	// could be metadata
 	for (let idx of pl.plugins) {
 	    if (idx.on && idx.code_hook) {
-		let r = idx.code_hook(code, lang, recursive_renderer)
-		if (r.terminal) return r.code
+		let r = idx.code_hook(code, lang, allthelinks,
+				      recursive_renderer)
+		if (r.terminal) {
+		    vputs(2, `r.code = <<<${r.code}>>>`)
+		    return r.code
+		}
 		code = r.code
 	    }
 	}
@@ -649,6 +664,7 @@ if (__filename === process.argv[1]) {
     exports.make_menu = make_menu
     exports.texinfo = texinfo
     exports.md_inline_strip = md_inline_strip
+    exports.md_extract_links = md_extract_links
 
     vputs = () => {}
 }
