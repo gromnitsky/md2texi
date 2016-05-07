@@ -114,7 +114,7 @@ suite('String', function() {
 	assert.deepEqual({html: ''}, func(''))
 
 	assert.deepEqual({
-	    html: `\n@smalldisplay\nAdded in: v5.3.0, v4.2.0; Deprecated since: v2.0.0\n@end smalldisplay\n`,
+	    html: `\n@smallindentedblock\nAdded in: v5.3.0, v4.2.0; Deprecated since: v2.0.0\n@end smallindentedblock\n`,
 	    terminal: true
 	}, func(`<!-- YAML
 added:
