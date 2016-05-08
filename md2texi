@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+
+let fs = require('fs')
+let program = require('commander')
+let util = require('util')
+
+let md = require('./lib/markdown')
+let im = require('./lib/infomenu')
+
+let texinfo = function(filename, texi) {
+    let r = `\\input texinfo
+
+@ifnottex
+@node Top
+@top ${filename}
+@end ifnottex
+
+@shortcontents
+@contents
+
+${texi}
+
+@bye
+`
+    return r
+}
+
+program
+    .version('2.0.0')
+    .option('-t, --title <string>', 'Document title')
+    .option('-a, --author <string>', 'Document author')
+    .option('--info-cat <string>', 'Info category')
+    .parse(process.argv)
+
+let markdown = fs.readFileSync(program.args[0]).toString()
+
+let menu = im.menu(markdown)
+console.error(util.inspect(menu, {depth: null}))
+
+let texi = md.markdown2texi(markdown, menu)
+process.stdout.write(texinfo('file.md', texi))
