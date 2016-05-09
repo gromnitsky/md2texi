@@ -7,6 +7,15 @@ let util = require('util')
 let ti = require('./lib/texinfo')
 let im = require('./lib/infomenu')
 
+let input_src = function() {
+    return program.args.length === 0 ? ['/dev/stdin'] : program.args
+}
+
+let conf = {
+    title: null,
+    author: null
+}
+
 program
     .version('2.0.0')
     .option('-t, --title <string>', 'Document title')
@@ -14,10 +23,35 @@ program
     .option('--info-cat <string>', 'Info category')
     .parse(process.argv)
 
-let markdown = fs.readFileSync(program.args[0]).toString()
+conf.title = program.title || 'No Title'
+conf.author = program.author || 'Anonymous' // TODO
+conf.infoCat = program.infoCat || 'Miscellaneous' // TODO
 
-let menu = im.menu(markdown)
-console.error(util.inspect(menu, {depth: null}))
+let texi = []
+let contents = []
+for (let file of input_src()) {
+    let markdown = fs.readFileSync(file).toString()
+    let node_prefix = ti.node_prefix(file)
+    let menu = im.menu(markdown, { node_prefix })
 
-let texi = ti.markdown2texi(markdown, menu)
-process.stdout.write(ti.render('file.md', texi))
+    contents.push(menu)
+//    console.error(util.inspect(menu, {depth: null}))
+    texi.push(`@c === BEGIN ${file} ===`)
+    texi.push(ti.markdown2texi(markdown, menu, { node_prefix }))
+    texi.push(`@c === END ${file} ===`)
+}
+
+if (contents.length > 1) {
+    // multiple files
+    let firstlevelmenu = []
+    firstlevelmenu.push("\n@menu")
+    for (let submenu of contents) {
+	for (let item of submenu.kids) {
+	    firstlevelmenu.push(`* ${item.name}: ${item.id}.`)
+	}
+    }
+    firstlevelmenu.push("@end menu\n")
+    texi.unshift(firstlevelmenu.join("\n"))
+}
+
+process.stdout.write(ti.render(texi.join("\n"), conf))
