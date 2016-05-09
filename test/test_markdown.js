@@ -66,7 +66,6 @@ foo @{ bar @}
 
 `, ti.markdown2texi('    foo { bar }'))
     })
-})
 
     test('blockquote', function() {
 	assert.equal(`
@@ -78,6 +77,7 @@ foo @{ bar @}
 `, ti.markdown2texi('>`foo`'))
     })
 
+})
 
 suite('Misc', function() {
     test('idgen', function() {
