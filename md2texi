@@ -4,7 +4,7 @@ let fs = require('fs')
 let program = require('commander')
 let util = require('util')
 
-let md = require('./lib/markdown')
+let ti = require('./lib/texinfo')
 let im = require('./lib/infomenu')
 
 program
@@ -19,5 +19,5 @@ let markdown = fs.readFileSync(program.args[0]).toString()
 let menu = im.menu(markdown)
 console.error(util.inspect(menu, {depth: null}))
 
-let texi = md.markdown2texi(markdown, menu)
-process.stdout.write(md.render('file.md', texi))
+let texi = ti.markdown2texi(markdown, menu)
+process.stdout.write(ti.render('file.md', texi))

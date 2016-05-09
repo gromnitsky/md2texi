@@ -2,11 +2,11 @@
 
 let fs = require('fs')
 
-let md = require('../lib/markdown')
+let ti = require('../lib/texinfo')
 let im = require('../lib/infomenu')
 
 let markdown = fs.readFileSync(process.argv[2]).toString()
 let menu = im.menu(markdown)
-let texi = md.markdown2texi(markdown, menu)
+let texi = ti.markdown2texi(markdown, menu)
 
-process.stdout.write(md.render('file.md', texi))
+process.stdout.write(ti.render('file.md', texi))
