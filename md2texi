@@ -29,20 +29,32 @@ conf.infoCat = program.infoCat || 'Miscellaneous' // TODO
 
 let texi = []
 let contents = []
+
+// create a full table of contents (grab menus from all the input files)
 for (let file of input_src()) {
     let markdown = fs.readFileSync(file).toString()
     let node_prefix = ti.node_prefix(file)
     let menu = im.menu(markdown, { node_prefix })
+//    console.error(util.inspect(menu, {depth: null}))
 
     contents.push(menu)
-//    console.error(util.inspect(menu, {depth: null}))
+}
+
+// actually parse each input file
+for (let file of input_src()) {
+    console.error(file)
+    let markdown = fs.readFileSync(file).toString()
+    let node_prefix = ti.node_prefix(file)
+    let menu = im.menu(markdown, { node_prefix })
+
     texi.push(`@c === BEGIN ${file} ===`)
-    texi.push(ti.markdown2texi(markdown, menu, { node_prefix }))
+    // use the aforementioned table of contents
+    texi.push(ti.markdown2texi(markdown, menu, { node_prefix, menu: contents }))
     texi.push(`@c === END ${file} ===`)
 }
 
+// multiple files
 if (contents.length > 1) {
-    // multiple files
     let firstlevelmenu = []
     firstlevelmenu.push("\n@menu")
     for (let submenu of contents) {
