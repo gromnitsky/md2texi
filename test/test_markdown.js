@@ -84,4 +84,58 @@ suite('Misc', function() {
 	assert.equal('zlib_inflatesync_buf_options', u.idgen('zlib.inflateSync(buf, [options])' ))
 	assert.equal('zlib_inflatesync_buf_options_1', u.idgen('zlib.inflateSync(buf, [options])' ))
     })
+
+    test('htmltable2texi', function() {
+	assert.equal('', ti.htmltable2texi())
+	assert.equal('', ti.htmltable2texi(''))
+
+	assert.throws(function() {
+	    ti.htmltable2texi('bwaa')
+	}, /no THs in table/)
+
+	let table = `
+<table>
+<thead>
+<tr>
+<th>header1</th>
+</tr>
+</thead>
+</table>
+`
+//	console.error(ti.htmltable2texi(table))
+	let r = ti.htmltable2texi(table)
+	assert.equal('\n@multitable @columnfractions .99\n', r[0])
+
+	table = `
+<table>
+<thead>
+<tr>
+<th>header1</th>
+<th>header2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>1</code></td>
+<td><code>2</code></td>
+</tr>
+</tbody>
+</table>
+`
+//	console.error(ti.htmltable2texi(table).join(""))
+	r = ti.htmltable2texi(table)
+	assert.equal(`
+@multitable @columnfractions .50 .50
+@headitem header1 @tab header2
+
+@item
+1
+@tab
+2
+
+@end multitable
+`, r.join(""))
+
+    })
+
 })
