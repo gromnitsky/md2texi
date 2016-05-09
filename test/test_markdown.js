@@ -1,7 +1,7 @@
 'use strict';
 
 let assert = require('assert')
-let md = require('../lib/markdown')
+let ti = require('../lib/texinfo')
 let u = require('../lib/u')
 
 suite('Simple', function() {
@@ -19,15 +19,15 @@ suite('Markdown inline', function() {
 @itemize
 @item @emph{@hashchar{} at&t} @strong{@{at&t@}} @{bar&baz@@@}
 @end itemize
-`, md.markdown2texi('* _# at&t_ **{at&amp;t}** {bar&baz@}'))
+`, ti.markdown2texi('* _# at&t_ **{at&amp;t}** {bar&baz@}'))
     })
 
     test('codespan', function() {
-	assert.equal(`\n@code{foo & @{bar@}}\n`, md.markdown2texi("`foo & {bar}`"))
+	assert.equal(`\n@code{foo & @{bar@}}\n`, ti.markdown2texi("`foo & {bar}`"))
     })
 
     // test('br', function () {
-    //		assert.equal("\na@*b\n", md.markdown2texi('a<br>b'))
+    //		assert.equal("\na@*b\n", ti.markdown2texi('a<br>b'))
     // })
 
 })
@@ -47,7 +47,7 @@ suite('Markdown block', function() {
 @node readable_read_size
 @subsubsection readable@asis{.}_read(size)
 
-`, md.markdown2texi(`# Class Method: \`Buffer\`.from(str[, encoding])
+`, ti.markdown2texi(`# Class Method: \`Buffer\`.from(str[, encoding])
 #### readable.\\_read(size)`))
     })
 
@@ -58,7 +58,7 @@ suite('Markdown block', function() {
 foo @{ bar @}
 @end example
 
-`, md.markdown2texi('    foo { bar }'))
+`, ti.markdown2texi('    foo { bar }'))
     })
 })
 
