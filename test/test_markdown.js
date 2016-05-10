@@ -29,12 +29,13 @@ suite('Markdown inline', function() {
     test('link', function() {
 	assert.equal("\n@uref{http://example.com,http://example.com}\n", ti.markdown2texi("http://example.com"))
 	assert.equal("\n@uref{http://example.com,@code{omglol}}\n", ti.markdown2texi("[`omglol`](http://example.com)"))
-	assert.equal("\n@inlinefmtifelse{html, @ref{errors_class_typeerror,@code{TypeError}}, @inlinefmtifelse{tex, @ref{errors_class_typeerror,,@code{TypeError}}, (@ref{errors_class_typeerror,@code{TypeError}},)}}\n", ti.markdown2texi("[`TypeError`](errors.html#errors_class_typeerror)"))
     })
 
-    // test('br', function () {
-    //		assert.equal("\na@*b\n", ti.markdown2texi('a<br>b'))
-    // })
+    test('link w/ nodejs-doc', function() {
+	let plugins = new ti.PluginsLoader('nodejs-doc')
+	let opt = {plugins}
+	assert.equal("\n@inlinefmtifelse{html, @ref{errors_class_typeerror,@code{TypeError}}, @inlinefmtifelse{tex, @ref{errors_class_typeerror,,@code{TypeError}}, (@ref{errors_class_typeerror,@code{TypeError}},)}}\n", ti.markdown2texi("[`TypeError`](errors.html#errors_class_typeerror)", null, opt))
+    })
 
 })
 
