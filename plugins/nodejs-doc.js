@@ -1,5 +1,7 @@
 /* Generates indices, parses YAML metadata */
 
+let marked = require('marked')
+
 let u = require('../lib/u')
 
 exports.index = function(raw, level, opt) {
@@ -54,5 +56,33 @@ exports.link_renderer = function(href, node_prefix, opt) {
 	args,
 	data: href,
 	terminal: false
+    }
+}
+
+exports.code = function(code, lang, links, recursive_renderer) {
+    var args = Array.prototype.slice.call(arguments, 0)
+
+    let invalid = (code) => {
+	return {
+	    args,
+	    terminal: false,
+	    data: code
+	}
+    }
+
+    if (lang) return invalid(code)
+    if (!code) return invalid('')
+    if (!code.match(/^\s*Stability:\s/)) return invalid(code)
+
+    let render = (text) => marked(text, { renderer: recursive_renderer })
+
+    return {
+	args: null,
+	terminal: true,
+	data: ['\n',
+	       '@smallindentedblock',
+	       render(code + "\n\n" + links).trim(),
+	       '@end smallindentedblock',
+	       '\n'].join("\n")
     }
 }

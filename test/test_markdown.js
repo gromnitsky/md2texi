@@ -139,4 +139,21 @@ suite('Misc', function() {
 
     })
 
+    test('md_extract_links', function () {
+	assert.equal('', ti.md_extract_links())
+
+	assert.equal(`[iterator]: https://example.com
+[\`util.inspect()\`]: util.html#util_util_inspect_object_options`,
+		     ti.md_extract_links(`
+[iterator]:     https://example.com
+[\`util.inspect()\`]:     util.html#util_util_inspect_object_options
+`))
+
+	assert.equal('[iterator]: https://example.com',
+		     ti.md_extract_links(`
+omglol
+[iterator]:     https://example.com
+`))
+    })
+
 })
