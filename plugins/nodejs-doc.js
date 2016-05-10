@@ -31,3 +31,28 @@ exports.index = function(raw, level, opt) {
 	terminal: false
     }
 }
+
+exports.link_renderer = function(href, node_prefix, opt) {
+    var args = Array.prototype.slice.call(arguments, 0)
+    if (href.match(/\.html$/) && opt.menu) {
+	// the link is of a type [Foo Bar](foo.html)
+	//
+	// we need to search through the first menu level of all
+	// parsed files to find a real node name for foo.html
+	href = opt.menu.filter(function(item) {
+	    let re = new RegExp(`^${node_prefix}`)
+	    if (!item.kids.length) return false
+	    return item.kids[0].id.match(re)
+	})
+	href = href.length === 0 ? node_prefix : href[0].kids[0].id
+    } else {
+	// this is a node from the current file, like [Foo Bar](#foo_bar)
+	href = href.replace(/^(.+)?#/, '')
+    }
+
+    return {
+	args,
+	data: href,
+	terminal: false
+    }
+}
