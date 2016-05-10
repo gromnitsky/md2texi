@@ -13,7 +13,8 @@ let input_src = function() {
 
 let conf = {
     title: null,
-    author: null
+    author: null,
+    plugins: null
 }
 
 program
@@ -21,6 +22,9 @@ program
     .option('-t, --title <string>', 'Document title')
     .option('-a, --author <string>', 'Document author')
     .option('--info-cat <string>', 'Info category')
+    .option('-p, --plugins <string>', 'A list of plugins to use, separated by commas', function(val) {
+	conf.pl = new ti.PluginsLoader(val)
+    })
     .parse(process.argv)
 
 conf.title = program.title || 'No Title'
@@ -39,6 +43,10 @@ for (let file of input_src()) {
 
     contents.push(menu)
 }
+// add an index entry
+let index = new im.InfoNode('root', 0)
+index.kid_add(new im.InfoNode('Index', 1))
+contents.push(index)
 
 // actually parse each input file
 for (let file of input_src()) {
@@ -49,7 +57,9 @@ for (let file of input_src()) {
 
     texi.push(`@c === BEGIN ${file} ===`)
     // use the aforementioned table of contents
-    texi.push(ti.markdown2texi(markdown, menu, { node_prefix, menu: contents }))
+    texi.push(ti.markdown2texi(markdown, menu, { node_prefix,
+						 menu: contents,
+						 plugins: conf.pl }))
     texi.push(`@c === END ${file} ===`)
 }
 
