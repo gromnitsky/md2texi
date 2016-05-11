@@ -1,8 +1,11 @@
 /* Generates indices, parses YAML metadata */
 
+let path = require('path')
+
 let marked = require('marked')
 
 let u = require('../lib/u')
+let common = require(path.join(__dirname, path.basename(__filename, '.js'), 'common.js'))
 
 exports.index = function(raw, level, opt) {
     var args = Array.prototype.slice.call(arguments, 0)
@@ -35,7 +38,6 @@ exports.index = function(raw, level, opt) {
 }
 
 exports.link_renderer = function(href, node_prefix, opt) {
-    var args = Array.prototype.slice.call(arguments, 0)
     if (href.match(/\.html$/) && opt.menu) {
 	// the link is of a type [Foo Bar](foo.html)
 	//
@@ -53,7 +55,7 @@ exports.link_renderer = function(href, node_prefix, opt) {
     }
 
     return {
-	args,
+	args: [href, node_prefix, opt],
 	data: href,
 	terminal: false
     }
@@ -84,5 +86,33 @@ exports.code = function(code, lang, links, recursive_renderer) {
 	       render(code + "\n\n" + links).trim(),
 	       '@end smallindentedblock',
 	       '\n'].join("\n")
+    }
+}
+
+// In the same spirit as that of the nodejs doc tool we ignore unknown
+// metadata entries (I don't like this approach)
+exports.html = function(html) {
+    var args = Array.prototype.slice.call(arguments, 0)
+    let not_applicable = (html) => {
+	return {
+	    args,
+	    terminal: false,
+	    data: html
+	}
+    }
+
+    if (!html) return not_applicable('')
+    if (!common.isYAMLBlock(html)) return not_applicable(html)
+
+    let meta = common.extractAndParseYAML(html)
+    let r = []
+
+    if (meta.added) r.push(`Added in: ${meta.added.join(', ')}`)
+    if (meta.deprecated) r.push(`Deprecated since: ${meta.deprecated.join(', ')}`)
+
+    return {
+	args: null,
+	data: r.length ? "\n@smallindentedblock\n" + r.join('; ') + "\n@end smallindentedblock\n" : '',
+	terminal: true
     }
 }
