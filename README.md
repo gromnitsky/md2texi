@@ -26,9 +26,9 @@ nodejs api doc files.
 
 ## Requirements
 
-* Installed nodejs 5.3
-* nodejs cloned repo
-* texinfo 5.2
+* Installed nodejs 6.1
+* Cloned nodejs repo
+* texinfo 6.0
 * GNU make
 
 ## Installation
@@ -67,18 +67,14 @@ $ md2texi -h
 
   Options:
 
-	-h, --help             output usage information
-	-V, --version          output the version number
-	-v, --verbose          Be verbose
-	-p, --partial          Generate a partial document
-	-t, --title <string>   Document title
-	-a, --author <string>  Document author
-	--info-cat <string>    Info category
-	--info <string>        Info filename output (for multiple src only)
-	--toc-full             Include full TOC
-	--toc-short            Include short TOC
-	--nodejs-api-doc       Turn 'nodejs-api-doc' plugin on
-	--nodejs-link          Insert a link to an online version for each section
+	-h, --help              output usage information
+	-V, --version           output the version number
+	-v, --verbose           Be verbose
+	-t, --title <string>    Document title
+	-a, --author <string>   Document author
+	--info-cat <string>     Info category
+	-p, --plugins <string>  A list of plugins to use, separated by commas
+	--info <string>         Info filename output (for multiple src only)
 ```
 
 ## PDF
