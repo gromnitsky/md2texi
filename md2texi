@@ -23,6 +23,7 @@ let conf = {
 
 program
     .version(meta.version)
+    .usage('[options] [file.markdown, ...]')
     .option('-v, --verbose', 'Be verbose', function() { conf.verbose++ })
     .option('-t, --title <string>', 'Document title')
     .option('-a, --author <string>', 'Document author')
@@ -30,13 +31,13 @@ program
     .option('-p, --plugins <string>', 'A list of plugins to use, separated by commas', function(val) {
 	conf.pl = new ti.PluginsLoader(val)
     })
-    .option('--info <string>', 'Info filename output (for multiple src only)')
+    .option('--info <string>', 'Info filename output')
     .parse(process.argv)
 
 conf.title = program.title || 'No Title'
 conf.author = program.author || 'Anonymous'
 conf.infoCat = program.infoCat || 'Miscellaneous'
-conf.info = program.info || 'multi'
+conf.info = program.info
 
 let texi = []
 let contents = []
@@ -68,6 +69,8 @@ for (let file of input_src()) {
 						 menu: contents,
 						 plugins: conf.pl }))
     texi.push(`@c === END ${file} ===`)
+
+    conf.info = conf.info || node_prefix.replace(/_$/, '')
 }
 
 // multiple files
