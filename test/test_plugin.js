@@ -16,4 +16,29 @@ suite('nodejs-doc', function() {
 		     nodejs_doc.index(' fs.foo.bar(baz)    ', 2, {node_prefix: 'fs'}).data)
     })
 
+    test('html', function() {
+	assert.deepEqual({args: [], data: '', terminal: false}, nodejs_doc.html())
+	assert.deepEqual({args: [''], data: '', terminal: false}, nodejs_doc.html(''))
+
+	assert.deepEqual({
+	    args: null,
+	    data: `\n@smallindentedblock\nAdded in: v5.3.0, v4.2.0; Deprecated since: v2.0.0\n@end smallindentedblock\n`,
+	    terminal: true
+	}, nodejs_doc.html(`<!-- YAML
+added:
+  - v5.3.0
+  - v4.2.0
+deprecated: v2.0.0
+-->`))
+
+	assert.deepEqual({
+	    args: null,
+	    data: '',
+	    terminal: true
+	}, nodejs_doc.html(`<!-- YAML
+type: property
+name: [index]
+-->`))
+    })
+
 })
