@@ -8,6 +8,7 @@ prefix := ~
 meta.title := The Node.js API
 meta.authors := Node.js Contributors
 meta.authors.texi := @copyright{} $(meta.authors)
+texi2any := texi2any
 
 .DELETE_ON_ERROR:
 
@@ -65,23 +66,22 @@ upload: $(out)/nodejs.texi $(out)/nodejs.info.tar.xz $(out)/nodejs.html $(out)/n
 	rsync -avPL --delete -e ssh $^ gromnitsky@web.sourceforge.net:/home/user-web/gromnitsky/htdocs/js/nodejs/
 
 %.texi: %.md
-	$(mkdir)/md2texi --nodejs-api-doc $(OPTS) $< > $@
+	$(mkdir)/md2texi -p nodejs-doc $(OPTS) $< > $@
 
 nodejs.texi: $(mkdir)/list.txt $(md.src)
-	$(mkdir)/md2texi --nodejs-api-doc \
+	$(mkdir)/md2texi -p nodejs-doc \
 		-t '$(meta.title)' -a '$(meta.authors.texi)' \
-		--info nodejs --toc-short --toc-full \
-		--info-cat 'Software development' $(OPTS) \
+		--info nodejs --info-cat 'Software development' $(OPTS) \
 		$(md.src) > $@
 
 $(out)/nodejs.info: $(out)/nodejs.texi
-	 makeinfo --force $<
+	 $(texi2any) --force $<
 
 $(out)/nodejs.info.tar.xz: $(out)/nodejs.info
 	 tar cfJ $@ $<*
 
 $(out)/nodejs.html: $(out)/nodejs.texi
-	 makeinfo --force --html --no-split --no-headers $<
+	 $(texi2any) --force --html --no-split --no-headers $<
 
 $(out)/nodejs.pdf: $(out)/nodejs.texi
 	texi2pdf -q -t '@afourpaper' $<
@@ -93,5 +93,4 @@ pp-%:
 
 .PHONY: test
 test:
-	cd $(mkdir)/test && \
-	../node_modules/.bin/mocha -u tdd $(OPTS) test_*.js
+	$(mkdir)/node_modules/.bin/mocha -u tdd $(mkdir)/test/test_*.js

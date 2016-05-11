@@ -1,670 +1,86 @@
 #!/usr/bin/env node
 
-'use strict';
-
 let fs = require('fs')
-let path = require('path')
+let program = require('commander')
 let util = require('util')
 
-let marked = require('marked')
-let program = require('commander')
-let Mustache = require('mustache')
-let parse5 = require('parse5')
-let xdg = require('xdg-basedir')
-
+let ti = require('./lib/texinfo')
+let im = require('./lib/infomenu')
 let meta = require('./package.json')
-
-
-String.prototype.html_strip = function() {
-    return this.replace(/<(?:.|\n)*?>/gm, '')
-}
-
-String.prototype.texi_escape = function() {
-    return this.replace(/[@{}]/g, '@$&')
-}
-
-String.prototype.html_unescape = function() {
-    return this.replace(/&([#\w]+);/g, function(_, n) {
-	n = n.toLowerCase()
-	if (n === 'colon') return ':'
-	if (n === 'amp') return '&'
-	if (n === 'lt') return '<'
-	if (n === 'gt') return '>'
-	if (n === 'quot') return '"'
-	if (n.charAt(0) === '#') {
-	    return n.charAt(1) === 'x'
-		? String.fromCharCode(parseInt(n.substring(2), 16))
-		: String.fromCharCode(+n.substring(1));
-	}
-	return ''
-    })
-}
-
-// return all matching nodes from doc
-let p5selectAll = function(doc, tagName) {
-    if (!doc || !tagName) return []
-
-    let all = []
-    for (let node of doc.childNodes) {
-	if (node.tagName === tagName) all.push(node)
-	if (node.childNodes && node.childNodes.length > 0) {
-	    // recursion!
-	    let r = p5selectAll(node, tagName)
-	    all = all.concat(r)
-	}
-    }
-
-    return all
-}
-
-let htmltable2texi = function(html) {
-    if (!html) return ''
-
-    let parser = new parse5.Parser()
-    let serializer1 = new parse5.Serializer()
-    let doc = parser.parseFragment(html)
-
-    // calculate the number or columns
-    let th = p5selectAll(doc, 'th')
-    let cols = th.length
-    if (cols === 0) throw new Error('no THs in table')
-    let cols_spec = ' .99'
-    if (cols > 1) {
-	let col_frac = (100/cols/100).toFixed(2).slice(1)
-	cols_spec = new Array(cols + 1).join(' ' + col_frac)
-    }
-
-    // texinfo table banner w/ column width spec
-    let r = []
-    r.push(`\n@multitable @columnfractions${cols_spec}\n`)
-
-    // texinfo table header
-    r.push('@headitem ')
-    r.push(th.map(function(node) {
-	return serializer1.serialize(node).html_strip().trim()
-    }).join(' @tab '))
-    r.push('\n')
-
-    // texinfo table body
-    let tr = p5selectAll(doc, 'tr').slice(1) // minus <thead>
-    for (let row of tr) {
-	let td = p5selectAll(row, 'td')
-	for (let idx in td) {
-	    r.push(parseInt(idx) === 0 ? '\n@item\n' : '@tab\n')
-	    r.push(serializer1.serialize(td[idx]).html_strip().trim() + '\n')
-	}
-    }
-
-    r.push(`\n@end multitable\n`)
-    return r
-}
-
-let infofile = function(file) {
-    return path.basename(file).replace(/\.[^.]+$/, '')
-}
-
-let template = function(type) {
-    return fs.readFileSync(path.join(__dirname, 'templates', `${type}.txt`)).toString()
-}
-
-let section = function(level) {
-    switch (level) {
-    case 1:
-	return '@chapter'
-	break
-    case 2:
-	return '@section'
-	break
-    case 3:
-	return '@subsection'
-	break
-    case 4:
-	return '@subsubsection'
-	break
-    default:
-	throw new Error(`level ${level} is not supported`)
-    }
-}
-
-let refName = function(text) {
-    return text.replace(/[:\\]/g, ' ').
-	replace(/,/g, '@comma{}').
-	html_strip().replace(/\s+/, ' ').trim()
-}
-
-class TexiNodeIdGenerator {
-    constructor(file) {
-	if (!file) throw new Error('file is required')
-	this.db = {}
-	this.file = file
-    }
-
-    prefix() {
-	return infofile(this.file).replace(/[^\w\-]/g, '-').replace(/-+/g, '-')
-    }
-
-    // we can be much more versatile here but we need to stay
-    // compatible w/ header-to-id process used in nodejs doc tool
-    _id(text) {
-	let id = text.trim().toLowerCase().html_strip()
-	    .replace(/[^\w]+/g, '_')
-	    .replace(/_+/g, '_')
-	    .replace(/_$/, '')
-
-	return `${this.prefix()}_${id}`
-    }
-
-    get(text) {
-	let id = this._id(text)
-	let prev = this.db[id]
-	if (util.isNumber(prev)) {
-	    this.db[id] += 1
-	    id = `${id}_${prev + 1}`
-	} else {
-	    this.db[id] = 0
-	}
-
-	return id
-    }
-}
-
-class MenuItem {
-    constructor(id, humanName, level, parent) {
-	this.id = id
-	this.humanName = humanName
-	this.level = level
-	this.parent = null
-
-	this.kids = []
-    }
-
-    kid_add(menuitem) {
-	if (this.level === menuitem.level - 1) {
-	    this.kids.push(menuitem)
-	    menuitem.parent = this
-	} else {
-	    let parent
-	    try {
-		parent = this.find(menuitem.level - 1)
-	    } catch (err) {
-		// the node an orphan, try one more time.  (makeinfo,
-		// during the conversion, can auto-raise levels
-		// automatically)
-		warnx(`node ${menuitem.id} at level ${menuitem.level} is an orphan`)
-		menuitem.level -= 1
-		// recursion!
-		this.kid_add(menuitem)
-		return
-	    }
-//	    console.error('%s < %s', menuitem.id, parent.id)
-	    parent.kids.push(menuitem)
-	    menuitem.parent = parent
-	}
-    }
-
-    // return a MenuItem object
-    find(level) {
-	let node = this
-	while (true) {
-	    if (node.level === level) return node
-	    node = node.parent
-	    if (!node) throw new Error(`${level} not found, root node reached`)
-	}
-
-	// not reached
-    }
-
-    find_by_id(id) {
-//	console.error(this.id, id)
-	if (this.id === id) return this
-
-	let r = null
-//	console.error(this.kids.map(function(v) { return v.id }))
-	for (let node of this.kids) {
-//	    console.error('*', node.id)
-	    if (node.id === id) {
-//		console.error('  FOUND')
-		return node
-	    }
-	    r = node.find_by_id(id)
-	    if (r) break
-	}
-
-	return r
-    }
-
-    find_by_id_prefix(prefix) {
-	let re
-	try {
-	    re = new RegExp(`^${prefix}`)
-	} catch (e) {
-	    return null
-	}
-	if (this.id && this.id.match(re)) return this
-
-	let r = null
-	for (let node of this.kids) {
-	    if (node.id.match(re)) {
-		return node
-	    }
-	    r = node.find_by_id_prefix(prefix)
-	    if (r) break
-	}
-
-	return r
-    }
-
-}
-
-let make_menu = function(input, file) {
-    input = input.texi_escape()
-    let renderer = new marked.Renderer()
-    let root = new MenuItem(null, null, 0)
-    let prev = root
-    let tnidg = new TexiNodeIdGenerator(file)
-
-    renderer.heading = function (text, level, raw) {
-	let tt = md_inline_strip(raw)
-	let id = tnidg.get(tt)
-
-	let mi = new MenuItem(id, refName(tt), level)
-	prev.kid_add(mi)
-	prev = mi
-    }
-    marked(input, { renderer: renderer })
-    return root
-}
-
-let menuitem2texi = function(root, node_id) {
-//    console.error('\n->', node_id)
-    let node = root.find_by_id(node_id)
-    if (node.kids.length === 0) return ""
-
-//    console.error(node)
-    let menu = node.kids.map(function(node) {
-	return {
-	    id: node.id,
-	    humanName: node.humanName
-	}
-    })
-    let r = Mustache.render(template("texi.menu"), {menu: menu})
-//    console.error(r)
-    return r
-}
-
-let md_inline_strip = function(markdown) {
-    if (!markdown) return ""
-    if (markdown.match(/\n/)) throw new Error("newline in the input")
-
-    let renderer = new marked.Renderer()
-//    renderer.link = function(href, title, text) { return text.html_unescape() }
-    return marked(markdown, { renderer: renderer })
-	.html_unescape().html_strip().trim()
-}
-
-// return a string that consists solely of footnote-style links
-let md_extract_links = function(markdown) {
-    if (!markdown) return ''
-
-    let lexems = marked.lexer(markdown)
-    let r = []
-    for (let key in lexems.links)
-	r.push(`[${key}]: ${lexems.links[key].href}`)
-    return r.join("\n")
-}
-
-let texinfo = function(menu, menu_idx, input, file, opt, pl) {
-    input = input.texi_escape()
-    let renderer = new marked.Renderer()
-    let recursive_renderer = renderer
-
-    let root = menu[menu_idx]
-//    console.error(util.inspect(root, {depth: null}))
-    let tnidg = new TexiNodeIdGenerator(file)
-    let allthelinks = md_extract_links(input)
-
-    renderer.heading = function (text, level, raw) {
-	let tt = md_inline_strip(raw)
-	let id = tnidg.get(tt)
-	vputs(1, `id=${id}, heading=${tt}`)
-	let r = []
-
-	// run plugins hook
-	pl.plugins.forEach( (idx) => {
-	    if (idx.on && idx.section_header_before_hook)
-		idx.section_header_before_hook(tnidg, id, r)
-	})
-
-	r.push(`\n@c ${new Array(78).join('-')}`)
-	r.push(`@node ${id}`)
-	r.push(`${section(level)} ${refName(tt)}`)
-	// run plugins hook
-	pl.plugins.forEach( (idx) => {
-	    if (idx.on && idx.section_header_hook)
-		idx.section_header_hook(tnidg, tt, level, r)
-	})
-	r.push('\n')
-	r.push(menuitem2texi(root, id))
-	return r.join('\n')
-    }
-
-    renderer.code = function(code, lang, escaped) {
-	// could be metadata
-	for (let idx of pl.plugins) {
-	    if (idx.on && idx.code_hook) {
-		let r = idx.code_hook(code, lang, allthelinks,
-				      recursive_renderer)
-		if (r.terminal) {
-		    vputs(2, `r.code = <<<${r.code}>>>`)
-		    return r.code
-		}
-		code = r.code
-	    }
-	}
-
-	return ['\n',
-		'@example',
-		code.html_unescape(),
-		'@end example',
-		'\n'].join("\n")
-    }
-
-    renderer.codespan = function(text) {
-	return '@code{' + text.html_unescape() + '}'
-    }
-
-    renderer.paragraph = function(text) {
-	return '\n' + text.html_unescape() + '\n'
-    }
-
-    renderer.list = function(body, ordered) {
-	let type = ordered ? 'enumerate' : 'itemize'
-	let r = []
-	r.push(`\n@${type}`)
-	r.push(body)
-	r.push(`\n@end ${type}\n`)
-	return r.join('\n')
-    }
-
-    renderer.listitem = function(text) {
-	return '\n@item ' + text.html_unescape()
-    }
-
-    renderer.em = function(text) {
-	return '@emph{' + text.html_unescape() + '}'
-    }
-
-    renderer.strong = function(text) {
-	return '@strong{' + text.html_unescape() + '}'
-    }
-
-    renderer.link = function(href, title, text) {
-	if (href.match(/^https?:\/\//)) {
-	    // `text` could be cleaned up but it seems unnecessary
-	    return `@uref{${href},${text}}`
-	}
-	if (href.match(/\.html$/)) {
-	    // from some-file.html to a node name; we need to look
-	    // into pre-made menu to search for the node name
-	    let prefix = href.replace(/\.html$/, '') + '_'
-
-	    href = menu.filter(function(val) {
-		return val.find_by_id_prefix(prefix)
-	    })
-	    href = href.length === 0 ? prefix : href[0].kids[0].id
-	} else {
-	    // convert to node id
-	    href = href.replace(/^(.+)?#/, '')
-	}
-	text = refName(text)
-	// see 'Conditional Commands' in Texinfo manual
-	return `@inlinefmtifelse{html, @ref{${href},${text}}, @inlinefmtifelse{tex, @ref{${href},,${text}}, (@ref{${href},${text}},)}}`
-    }
-
-    renderer.html = function(html) {
-	html = html.trim()
-
-	// could be metadata in comments
-	for (let idx of pl.plugins) {
-	    if (idx.on && idx.html_hook) {
-		let r = idx.html_hook(html)
-		if (r.terminal) return r.html
-		html = r.html
-	    }
-	}
-
-	// strip comments
-	if (html.match(/^<!--.*?-->$/)) return ''
-	// try to convert a simple table
-	if (html.match(/^<table>/)) return htmltable2texi(html).join("")
-
-	warnx(`${file}: raw html:\n${html}`)
-	return html
-    }
-
-    renderer.blockquote = function(quote) {
-	return '\n@indentedblock\n' + quote.html_unescape() + '\n@end indentedblock\n'
-    }
-
-    let topmenu = ''
-    if (!opt.partial) {
-	let menu = [
-	    { id: root.kids[0].id, humanName: root.kids[0].humanName },
-	    { id: 'Index', humanName: 'Index' }
-	]
-	topmenu = Mustache.render(template("texi.menu"), {menu: menu})
-    }
-
-    let r = [topmenu, marked(input, { renderer: renderer })]
-    // run plugins hook for the last section
-    pl.plugins.forEach( (idx) => {
-	if (idx.on && idx.section_header_before_hook)
-	    idx.section_header_before_hook(tnidg, null, r)
-    })
-    return r.join('')
-}
-
-
-/*
-  CLI
-*/
-
-let conf = {
-    tocFull: false,
-    tocShort: false,
-    title: null,
-    author: null,
-    info: null,
-    infoCat: null,
-    partial: false,
-    verbose: 0,
-    banner: true,
-    name: meta.name
-}
-
-let errx = function(msg) {
-    console.error("%s error: %s", path.basename(process.argv[1]), msg)
-    process.exit(1)
-}
-
-let vputs = function(level, msg) {
-    if (level <= conf.verbose) console.error(msg)
-}
-
-let warnx = function(msg) {
-    vputs(0, `${path.basename(process.argv[1])} warning: ${msg}`)
-}
 
 let input_src = function() {
     return program.args.length === 0 ? ['/dev/stdin'] : program.args
 }
 
-let input_read = function(source) {
-    try {
-	return fs.readFileSync(source).toString()
-    } catch (err) {
-	errx(err.message)
-    }
+let conf = {
+    verbose: 0,
+    title: null,
+    author: null,
+    info: null,
+    generator: `${meta.name}/${meta.version} (${process.platform}; ${process.arch}) node/${process.versions.node}`,
+    plugins: null
 }
 
-let version = function() {
-    return `${meta.name}/${meta.version} (${process.platform}; ${process.arch}) node/${process.versions.node}`
+program
+    .version(meta.version)
+    .option('-v, --verbose', 'Be verbose', function() { conf.verbose++ })
+    .option('-t, --title <string>', 'Document title')
+    .option('-a, --author <string>', 'Document author')
+    .option('--info-cat <string>', 'Info category')
+    .option('-p, --plugins <string>', 'A list of plugins to use, separated by commas', function(val) {
+	conf.pl = new ti.PluginsLoader(val)
+    })
+    .option('--info <string>', 'Info filename output (for multiple src only)')
+    .parse(process.argv)
+
+conf.title = program.title || 'No Title'
+conf.author = program.author || 'Anonymous'
+conf.infoCat = program.infoCat || 'Miscellaneous'
+conf.info = program.info || 'multi'
+
+let texi = []
+let contents = []
+
+// create a full table of contents (grab menus from all the input files)
+for (let file of input_src()) {
+    let markdown = fs.readFileSync(file).toString()
+    let node_prefix = ti.node_prefix(file)
+    let menu = im.menu(markdown, { node_prefix })
+//    console.error(util.inspect(menu, {depth: null}))
+
+    contents.push(menu)
+}
+// add an index entry
+let index = new im.InfoNode('root', 0)
+index.kid_add(new im.InfoNode('Index', 1))
+contents.push(index)
+
+// actually parse each input file
+for (let file of input_src()) {
+    if (conf.verbose) console.error(file)
+    let markdown = fs.readFileSync(file).toString()
+    let node_prefix = ti.node_prefix(file)
+    let menu = im.menu(markdown, { node_prefix })
+
+    texi.push(`@c === BEGIN ${file} ===`)
+    // use the aforementioned table of contents
+    texi.push(ti.markdown2texi(markdown, menu, { node_prefix,
+						 menu: contents,
+						 plugins: conf.pl }))
+    texi.push(`@c === END ${file} ===`)
 }
 
-let texi = function(ti, file, opt) {
-    if (opt.partial) return ti
-    opt.timestamp = new Date()
-    opt.generator = version()
-    let o = {
-	opt: opt,
-	infofile: infofile(file),
-	texi: ti
-    }
-    return Mustache.render(template('texi.doc'), o)
-}
-
-class PluginsLoader {
-    // `program` is a Commander object
-    // `conf` is a hash
-    constructor(program, conf) {
-	this.program = program
-	this.conf = conf
-
-	this.plugins = []
-	this.files = []
-	let dirs = [__dirname, path.join(xdg.data, this.conf.name)]
-	    .map( (idx) => path.join(idx, 'plugins') )
-	try {
-	    dirs.forEach( (idx) => this.files = this.files
-			  .concat(fs.readdirSync(idx)
-				  .map( (bfile) => path.resolve(idx, bfile) )) )
-	} catch (e) {}
-
-	this.files = this.files.filter( (idx) => idx.match(/\.js$/) )
-	this.load()
-    }
-
-    load() {
-	this.files.forEach( (idx) => {
-	    let pn = require(idx)
-	    pn.conf = pn.conf || {}
-	    pn.meta = pn.meta || {}
-	    pn.lib = {}
-
-	    pn.lib.refName = refName
-	    pn.meta.name = path.basename(idx, ".js")
-	    this.program.option(`--${pn.meta.name}`, `Turn '${pn.meta.name}' plugin on`)
-	    if (pn.clo_names.length > 0) pn.clo_setup(this.program)
-
-	    this.plugins.push(pn)
-	})
-    }
-
-    // should be invoked after program.parse()
-    updateConf() {
-	this.plugins.forEach( (pn) => {
-	    pn.clo_names.forEach( (clo) => {
-		this.conf[clo] = this.program[clo]
-		pn.conf[clo] = this.program[clo]
-	    })
-	    pn.on = this.program[PluginsLoader.CommanderName(pn.meta.name)]
-	})
-    }
-
-    // --foo-bar => fooBar
-    static CommanderName(optname) {
-	return optname.replace('--', '').replace('no-', '')
-	    .split('-').reduce( (str, word) => {
-		return str + word[0].toUpperCase() + word.slice(1)
-	    })
-    }
-}
-
-/*
-  Main
-*/
-if (__filename === process.argv[1]) {
-
-    program
-	.version(version())
-	.usage('[options] [file.markdown, ...]')
-	.option('-v, --verbose', 'Be verbose', function() { conf.verbose++ })
-	.option('-p, --partial', 'Generate a partial document')
-	.option('-t, --title <string>', 'Document title')
-	.option('-a, --author <string>', 'Document author')
-	.option('--info-cat <string>', 'Info category')
-	.option('--info <string>', 'Info filename output (for multiple src only)')
-	.option('--toc-full', 'Include full TOC')
-	.option('--toc-short', 'Include short TOC')
-	.option('--no-banner', "Don't insert 'Generated by ...'")
-
-    let pl = new PluginsLoader(program, conf)
-    program.parse(process.argv)
-
-    conf.partial = program.partial
-    conf.title = program.title || 'No Title'
-    conf.author = program.author || 'Anonymous'
-    conf.infoCat = program.infoCat || 'Miscellaneous'
-    conf.info = program.info || 'multi'
-    conf.tocFull = program.tocFull
-    conf.tocShort = program.tocShort
-    conf.banner = program.banner
-    pl.updateConf()
-
-    let multi = input_src().length > 1
-
-    if (multi) conf.partial = true
-    vputs(2, util.inspect(conf))
-
-    // 1st pass: grap all menus from all files
-    let topmenu = []
-    for (let src of input_src()) {
-	let input = input_read(src)
-	topmenu.push(make_menu(input, src))
-    }
-
-    let ti = []
-    // 2td pass: convert each file
-    for (let idx in input_src()) {
-	let src = input_src()[idx]
-	vputs(1, src)
-	let input = input_read(src)
-
-	// conversion md -> texinfo
-	let output = texinfo(topmenu, idx, input, src, conf, pl)
-
-	if (multi) {
-	    // don't print, just grab the converted result
-	    ti.push(output)
-	} else {
-	    process.stdout.write(texi(output, src, conf))
+// multiple files
+if (contents.length > 1) {
+    let firstlevelmenu = []
+    firstlevelmenu.push("\n@menu")
+    for (let submenu of contents) {
+	for (let item of submenu.kids) {
+	    firstlevelmenu.push(`* ${item.name}: ${item.id}.`)
 	}
     }
-
-    if (multi) {
-	// prepare the top menu
-	topmenu = topmenu.map(function(val) {
-	    return { id: val.kids[0].id, humanName: val.kids[0].humanName }
-	})
-	topmenu.push({ id: 'Index', humanName: 'Index' })
-	ti.unshift(Mustache.render(template("texi.menu"), {menu: topmenu}))
-
-	// wrap the result
-	conf.partial = false
-	let output = texi(ti.join(""), conf.info, conf)
-	process.stdout.write(output)
-    }
-
-} else {
-    // for tests
-    exports.refName = refName
-    exports.p5selectAll = p5selectAll
-    exports.htmltable2texi = htmltable2texi
-    exports.TexiNodeIdGenerator = TexiNodeIdGenerator
-    exports.make_menu = make_menu
-    exports.texinfo = texinfo
-    exports.md_inline_strip = md_inline_strip
-    exports.md_extract_links = md_extract_links
-
-    vputs = () => {}
+    firstlevelmenu.push("@end menu\n")
+    texi.unshift(firstlevelmenu.join("\n"))
 }
+
+process.stdout.write(ti.render(texi.join("\n"), conf))

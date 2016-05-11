@@ -2,8 +2,8 @@
     "private": true,
 
     "name": "md2texi",
-    "version": "1.1.0",
-    "description": "Convert nodejs documentation to Texinfo format",
+    "version": "2.0.0",
+    "description": "Convert nodejs documentation to the Texinfo format",
 
     "keywords": [
 	"texinfo",
@@ -26,13 +26,12 @@
 
     "dependencies": {
 	"marked": "~0.3.5",
-	"js-yaml": "~0.3.7",
-	"commander": "~2.8.1",
-	"mustache": "~2.0.0",
-	"parse5": "~1.4.2",
-	"xdg-basedir": "~2.0.0"
+	"ent": "~2.2.0",
+	"js-yaml": "~3.6.0",
+	"commander": "~2.9.0",
+	"parse5": "~2.1.5"
     },
     "devDependencies": {
-	"mocha": "~2.3.4"
+	"mocha": "~2.4.5"
     }
 }
