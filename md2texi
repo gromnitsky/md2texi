@@ -6,30 +6,37 @@ let util = require('util')
 
 let ti = require('./lib/texinfo')
 let im = require('./lib/infomenu')
+let meta = require('./package.json')
 
 let input_src = function() {
     return program.args.length === 0 ? ['/dev/stdin'] : program.args
 }
 
 let conf = {
+    verbose: 0,
     title: null,
     author: null,
+    info: null,
+    generator: `${meta.name}/${meta.version} (${process.platform}; ${process.arch}) node/${process.versions.node}`,
     plugins: null
 }
 
 program
-    .version('2.0.0')
+    .version(meta.version)
+    .option('-v, --verbose', 'Be verbose', function() { conf.verbose++ })
     .option('-t, --title <string>', 'Document title')
     .option('-a, --author <string>', 'Document author')
     .option('--info-cat <string>', 'Info category')
     .option('-p, --plugins <string>', 'A list of plugins to use, separated by commas', function(val) {
 	conf.pl = new ti.PluginsLoader(val)
     })
+    .option('--info <string>', 'Info filename output (for multiple src only)')
     .parse(process.argv)
 
 conf.title = program.title || 'No Title'
-conf.author = program.author || 'Anonymous' // TODO
-conf.infoCat = program.infoCat || 'Miscellaneous' // TODO
+conf.author = program.author || 'Anonymous'
+conf.infoCat = program.infoCat || 'Miscellaneous'
+conf.info = program.info || 'multi'
 
 let texi = []
 let contents = []
@@ -50,7 +57,7 @@ contents.push(index)
 
 // actually parse each input file
 for (let file of input_src()) {
-    console.error(file)
+    if (conf.verbose) console.error(file)
     let markdown = fs.readFileSync(file).toString()
     let node_prefix = ti.node_prefix(file)
     let menu = im.menu(markdown, { node_prefix })
