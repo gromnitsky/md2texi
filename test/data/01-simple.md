@@ -35,6 +35,15 @@ querystring.stringify({ w: '中文', foo: 'bar' }, null, null,
 The unescape function used by `querystring.parse`,
 provided so that it could be overridden if necessary.
 
+### `decodeURIComponent`
+
 It will try to use `decodeURIComponent` in the first place,
+
+#### but
+
 but if that fails it falls back to a safer equivalent that
 doesn't throw on malformed URLs.
+
+# Level 1
+
+Again!
