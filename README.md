@@ -1,9 +1,11 @@
 # md2texi
 
-Convert nodejs documentation into Texinfo format (& subsequently to
-pdf, html, info).
+Convert nodejs API documentation to the Texinfo format (& subsequently
+to pdf, html, info).
 
-Prebuilt versions (texi, info, html, pdf): http://gromnitsky.users.sourceforge.net/js/nodejs/
+Prebuilt versions of the current branch (texi, info, html, pdf):
+http://gromnitsky.users.sourceforge.net/js/nodejs/ (I update them more
+or less regularly.)
 
 ## Why?
 
@@ -14,8 +16,8 @@ Prebuilt versions (texi, info, html, pdf): http://gromnitsky.users.sourceforge.n
 Optional goodies:
 
 * An offline mode.
-* A nice pdf.
-* A full text search.
+* A nice looking pdf.
+* A **full text search**.
 * An alternate html representation (for example, as a one big file).
 
 ![A screenshot of running Emacs](https://raw.github.com/gromnitsky/md2texi/master/screenshot1.png)
@@ -26,9 +28,9 @@ nodejs api doc files.
 
 ## Requirements
 
-* Installed nodejs 6.1
+* Installed nodejs 6.x
 * Cloned nodejs repo
-* texinfo 6.0
+* texinfo 6.x
 * GNU make
 
 ## Installation
