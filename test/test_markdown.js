@@ -78,6 +78,19 @@ foo @{ bar @}
 `, ti.markdown2texi('>`foo`'))
     })
 
+    test('table', function() {
+	assert.equal(`
+@multitable @columnfractions 0.3333333333333333 0.3333333333333333 0.3333333333333333
+@headitem h1 @tab h2 @tab h3
+@item c1 @tab c2 @tab c3
+@end multitable
+`, ti.markdown2texi(`
+| h1 | h2 | h3 |
+|----|----|----|
+| c1 | c2 | c3 |
+`))
+    })
+
 })
 
 suite('Misc', function() {
