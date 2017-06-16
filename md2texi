@@ -41,12 +41,13 @@ conf.info = program.info
 
 let texi = []
 let contents = []
+let node_aliases = {}
 
 // create a full table of contents (grab menus from all the input files)
 for (let file of input_src()) {
     let markdown = fs.readFileSync(file).toString()
     let node_prefix = ti.node_prefix(file)
-    let menu = im.menu(markdown, { node_prefix })
+    let menu = im.menu(markdown, { node_prefix, node_aliases })
 //    console.error(util.inspect(menu, {depth: null}))
 
     contents.push(menu)
@@ -66,6 +67,7 @@ for (let file of input_src()) {
     texi.push(`@c === BEGIN ${file} ===`)
     // use the aforementioned table of contents
     texi.push(ti.markdown2texi(markdown, menu, { node_prefix,
+						 node_aliases,
 						 menu: contents,
 						 plugins: conf.pl }))
     texi.push(`@c === END ${file} ===`)
