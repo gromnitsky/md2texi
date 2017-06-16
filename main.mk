@@ -17,24 +17,20 @@ compile:
 
 infodir := share/info
 info.toplevel := $(DESTDIR)$(prefix)/$(infodir)/dir
-mkdir := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+mk := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 out := .
 
-ifeq ($(realpath $(mkdir)), $(realpath $(out)))
+ifeq ($(realpath $(mk)), $(realpath $(out)))
 $(error running make in the src dir is not supported)
 endif
 
 $(if $(DATA),,$(error DATA must point to nodejs docs dir))
 
-vpath %.md $(DATA)
-md.src.list := $(shell cat $(mkdir)/list.txt)
-md.src := $(addprefix $(DATA)/, $(md.src.list))
+md.src := $(filter-out %/_toc.md, $(wildcard $(DATA)/*.md))
+texi.dest := $(patsubst $(DATA)/%.md, $(out)/%.texi, $(md.src))
 
-texi.api := $(patsubst $(DATA)/%.md, $(out)/%.texi, $(md.src))
-
-all := $(texi.api) $(out)/nodejs.texi $(out)/nodejs.info
-
-compile: $(all)
+compile.all := $(texi.dest) $(out)/nodejs.texi $(out)/nodejs.info
+compile: $(compile.all)
 
 .PHONY: pdf
 pdf: $(out)/nodejs.pdf
@@ -65,14 +61,17 @@ install: nodejs.info
 upload: $(out)/nodejs.texi $(out)/nodejs.info.tar.xz $(out)/nodejs.html $(out)/nodejs.pdf
 	rsync -avPL --delete -e ssh $^ gromnitsky@web.sourceforge.net:/home/user-web/gromnitsky/htdocs/js/nodejs/
 
-%.texi: %.md
-	$(mkdir)/md2texi -p nodejs-doc $(OPTS) $< > $@
+$(out)/%.texi: $(DATA)/%.md
+	$(mk)/md2texi -p nodejs-doc $(OPTS) $< > $@
 
-nodejs.texi: $(mkdir)/list.txt $(md.src)
-	$(mkdir)/md2texi -p nodejs-doc \
+$(out)/list.txt: $(DATA)/_toc.md $(md.src)
+	grep '\.html)' $< | sed 's,.*(\(.*\).html),$(DATA)/\1.md,' > $@
+
+nodejs.texi: $(out)/list.txt
+	$(mk)/md2texi -p nodejs-doc \
 		-t '$(meta.title)' -a '$(meta.authors.texi)' \
 		--info nodejs --info-cat 'Software development' $(OPTS) \
-		$(md.src) > $@
+		`cat $<` > $@
 
 $(out)/nodejs.info: $(out)/nodejs.texi
 	 $(texi2any) --force $<
@@ -85,12 +84,11 @@ $(out)/nodejs.html: $(out)/nodejs.texi
 
 $(out)/nodejs.pdf: $(out)/nodejs.texi
 	texi2pdf -q -t '@afourpaper' $<
-	-exiftool -Creator="`$(mkdir)/md2texi -V`" \
+	-exiftool -Creator="`$(mk)/md2texi -V`" \
 		-Title='$(meta.title)' -Author='$(meta.authors)' $@
 
-pp-%:
-	@echo "$(strip $($*))" | tr ' ' \\n
+
 
 .PHONY: test
 test:
-	$(mkdir)/node_modules/.bin/mocha -u tdd $(mkdir)/test/test_*.js
+	$(mk)/node_modules/.bin/mocha -u tdd $(mk)/test/test_*.js
