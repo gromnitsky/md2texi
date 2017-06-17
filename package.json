@@ -25,13 +25,10 @@
     "bin": "./md2texi",
 
     "dependencies": {
-	"marked": "~0.3.5",
+	"marked": "~0.3.6",
 	"ent": "~2.2.0",
-	"js-yaml": "~3.6.0",
+	"js-yaml": "~3.8.4",
 	"commander": "~2.9.0",
-	"parse5": "~2.1.5"
-    },
-    "devDependencies": {
-	"mocha": "~2.4.5"
+	"parse5": "~2.2.3"
     }
 }
