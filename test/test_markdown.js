@@ -34,7 +34,7 @@ suite('Markdown inline', function() {
     test('link w/ nodejs-doc', function() {
 	let plugins = new ti.PluginsLoader('nodejs-doc')
 	let opt = {plugins}
-	assert.equal("\n@inlinefmtifelse{html, @ref{errors_class_typeerror,@code{TypeError}}, @inlinefmtifelse{tex, @ref{errors_class_typeerror,,@code{TypeError}}, (@ref{errors_class_typeerror,@code{TypeError}},)}}\n", ti.markdown2texi("[`TypeError`](errors.html#errors_class_typeerror)", null, opt))
+	assert.equal("\n@mylink{errors_class_typeerror,@code{TypeError}}\n", ti.markdown2texi("[`TypeError`](errors.html#errors_class_typeerror)", null, opt))
     })
 
 })
