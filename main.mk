@@ -91,4 +91,4 @@ $(out)/nodejs.pdf: $(out)/nodejs.texi
 
 .PHONY: test
 test:
-	$(mk)/node_modules/.bin/mocha -u tdd $(mk)/test/test_*.js
+	mocha -u tdd $(mk)/test/test_*.js $(OPTS)
