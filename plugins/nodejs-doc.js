@@ -5,6 +5,7 @@ let path = require('path')
 let marked = require('marked')
 
 let u = require('../lib/u')
+// a straight copy of node's `tools/doc/common.js`
 let common = require(path.join(__dirname, path.basename(__filename, '.js'), 'common.js'))
 
 exports.index = function(raw, level, opt) {
@@ -104,7 +105,12 @@ exports.html = function(html) {
     if (!html) return not_applicable('')
     if (!common.isYAMLBlock(html)) return not_applicable(html)
 
-    let meta = common.extractAndParseYAML(html)
+    let meta = {}
+    try {
+	meta = common.extractAndParseYAML(html)
+    } catch (e) {
+	u.log('js-yaml fails to parse:', html, e.message)
+    }
     let r = []
 
     if (meta.added) r.push(`Added in: ${meta.added.join(', ')}`)
