@@ -30,7 +30,7 @@ nodejs api doc files.
 
 * Installed nodejs 6.x
 * Cloned nodejs repo
-* texinfo 6.x
+* texinfo 6.3+
 * GNU make
 
 ## Installation
@@ -89,7 +89,10 @@ to generate `nodejs.pdf` file.
 
 ## Bugs
 
-1. Cross-references in Emacs Info mode are always prefixed w/ the 'see'
+1. Vintage box drawing chars (┌,┐,└,┘,&c) aren't visible in the pdf
+   output. This is an internal texinfo limitation.
+
+2. Cross-references in Emacs Info mode are always prefixed w/ the 'see'
    word, like this: `For example a (see request to an HTTP server) is a
    stream`.
 
@@ -104,7 +107,7 @@ to generate `nodejs.pdf` file.
 	Evaluate each line (`C-x C-e`), kill the Info buffer & open it
 	again.
 
-2. Tables look fine in the html output but horrific in the info
+3. Tables look fine in the html output but horrific in the info
    output. This is an Emacs bug.
 
 ## License
