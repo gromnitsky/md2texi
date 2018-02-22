@@ -19,15 +19,20 @@ exports.index = function(raw, level, opt) {
 	if (level === 1) return ''
 	return str.split('.')[0] === node_prefix ? '' : node_prefix + ' '
     }
+    let sanitize_name = (s, is_event) => {
+	let re = is_event ? /Event:\s+([^(\[]+).*/ : /([^(\[]+).*/
+	return s.replace(re, '$1')
+	    .replace(/['"]/g, '').replace(/[:{}]/g, ' ')
+	    .replace(/\s+/g, ' ').trim()
+    }
 
-    let data = null
-
+    let data
     if (name.match(/event:/i)) {
-	name = name.replace(/Event:\s+([^(\[]+).*/, '$1').replace(/['"]/g, '')
+	name = sanitize_name(name, true)
 	data = [`@findex ${node_prefix !== '' ? node_prefix + ' ': ''}event ${name}`,
 		`@findex event ${prefix(name)}${name}`]
     } else {
-	name = name.replace(/([^(\[]+).*/, '$1').replace(/['":]/g, '')
+	name = sanitize_name(name)
 	data = [`@findex ${prefix(name)}${name}`]
     }
 
