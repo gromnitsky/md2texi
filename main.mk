@@ -26,7 +26,7 @@ endif
 
 $(if $(DATA),,$(error DATA must point to nodejs docs dir))
 
-md.src := $(filter-out %/_toc.md, $(wildcard $(DATA)/*.md))
+md.src := $(filter-out %/index.md, $(wildcard $(DATA)/*.md))
 texi.dest := $(patsubst $(DATA)/%.md, $(out)/%.texi, $(md.src))
 
 compile.all := $(texi.dest) $(out)/nodejs.texi $(out)/nodejs.info
@@ -64,7 +64,7 @@ upload: $(out)/nodejs.texi $(out)/nodejs.info.tar.xz $(out)/nodejs.html $(out)/n
 $(out)/%.texi: $(DATA)/%.md
 	$(mk)/md2texi -p nodejs-doc $(OPTS) $< > $@
 
-$(out)/list.txt: $(DATA)/_toc.md $(md.src)
+$(out)/list.txt: $(DATA)/index.md $(md.src)
 	grep '\.html)' $< | sed 's,.*(\(.*\).html),$(DATA)/\1.md,' > $@
 
 nodejs.texi: $(out)/list.txt
