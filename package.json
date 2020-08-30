@@ -23,7 +23,7 @@
    "dependencies": {
       "marked": "0.3.6",
       "ent": "~2.2.0",
-      "js-yaml": "~3.8.4",
+      "js-yaml": "~3.14.0",
       "commander": "~2.9.0",
       "parse5": "~2.2.3"
    }
