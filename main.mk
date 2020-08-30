@@ -74,13 +74,13 @@ nodejs.texi: $(out)/list.txt
 		`cat $<` > $@
 
 $(out)/nodejs.info: $(out)/nodejs.texi
-	 $(texi2any) --force $<
+	 $(texi2any) --no-warn --force $<
 
 $(out)/nodejs.info.tar.xz: $(out)/nodejs.info
 	 tar cfJ $@ $<*
 
 $(out)/nodejs.html: $(out)/nodejs.texi
-	 $(texi2any) --force --html --no-split --no-headers $<
+	 $(texi2any) --no-warn --force --html --no-split --no-headers $<
 
 $(out)/nodejs.pdf: $(out)/nodejs.texi
 	texi2pdf -q -t '@afourpaper' $<
