@@ -83,7 +83,7 @@ $(out)/nodejs.html: $(out)/nodejs.texi
 	 $(texi2any) --no-warn --force --html --no-split --no-headers $<
 
 $(out)/nodejs.pdf: $(out)/nodejs.texi
-	texi2pdf -q -t '@afourpaper' $<
+	-texi2pdf -q -t '@afourpaper' $<
 	-exiftool -Creator="`$(mk)/md2texi -V`" \
 		-Title='$(meta.title)' -Author='$(meta.authors)' $@
 
