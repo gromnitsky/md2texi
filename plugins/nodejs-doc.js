@@ -44,8 +44,8 @@ exports.index = function(raw, level, opt) {
 }
 
 exports.link_renderer = function(href, node_prefix, opt) {
-    if (href.match(/\.html$/) && opt.menu) {
-	// the link is of a type [Foo Bar](foo.html)
+    if (href.match(/\.md$/) && opt.menu) {
+	// the link is of a type [Foo Bar](foo.md)
 	//
 	// we need to search through the first menu level of all
 	// parsed files to find a real node name for foo.html

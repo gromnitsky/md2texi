@@ -65,7 +65,7 @@ $(out)/%.texi: $(DATA)/%.md
 	$(mk)/md2texi -p nodejs-doc $(OPTS) $< > $@
 
 $(out)/list.txt: $(DATA)/index.md $(md.src)
-	grep '\.html)' $< | sed 's,.*(\(.*\).html),$(DATA)/\1.md,' > $@
+	grep '\.md)' $< | sed 's,.*(\(.*\)),$(DATA)/\1,' > $@
 
 nodejs.texi: $(out)/list.txt
 	$(mk)/md2texi -p nodejs-doc \
