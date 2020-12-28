@@ -21,7 +21,7 @@
    "preferGlobal": true,
    "bin": "./md2texi",
    "dependencies": {
-      "marked": "0.3.6",
+      "marked": "0.3.18",
       "ent": "~2.2.0",
       "js-yaml": "~3.14.0",
       "commander": "~2.9.0",
